@@ -11,6 +11,11 @@ import constants
 import sys
 
 """
+One layer encoding-decoding:
+Fashion -> (Encode) -> MNIST -> (Decode) -> Fashion
+"""
+
+"""
 Parse arguments
 """
 try:
