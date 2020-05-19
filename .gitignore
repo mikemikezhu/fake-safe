@@ -550,5 +550,5 @@ MigrationBackup/
 # Python virtual environment
 venv
 
-# Training data folder
-data
+# Training output folder
+output
