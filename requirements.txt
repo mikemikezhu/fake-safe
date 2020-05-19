@@ -4,3 +4,4 @@ scipy
 pylint
 autopep8
 tensorflow
+matplotlib
