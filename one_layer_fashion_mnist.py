@@ -8,6 +8,25 @@ from displayers import SampleImageDisplayer
 import numpy as np
 import constants
 
+import sys
+
+"""
+Parse arguments
+"""
+try:
+    should_display_directly = int(sys.argv[1])
+    should_save_to_file = int(sys.argv[2])
+except ValueError:
+    print('Invalid system argument')
+    should_display_directly = False
+    should_save_to_file = False
+
+should_display_directly = False if should_display_directly == 0 else True
+print('Should display directly: {}'.format(should_display_directly))
+
+should_save_to_file = False if should_save_to_file == 0 else True
+print('Should save to file: {}'.format(should_save_to_file))
+
 """
 Load data
 """
@@ -106,8 +125,8 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
     original_name = 'Original - {}'.format(current_round + 1)
     image_displayer.display_samples(name=original_name,
                                     samples=sample_images,
-                                    should_display_directly=True,
-                                    should_save_to_file=False)
+                                    should_display_directly=should_display_directly,
+                                    should_save_to_file=should_save_to_file)
 
     # Encode images
     sample_images_scaled = (sample_images / 255.0) * 2 - 1
@@ -120,8 +139,8 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
     encoded_sample_images = encoded_sample_images[:, :, :, 0]
     image_displayer.display_samples(name=encoded_name,
                                     samples=encoded_sample_images,
-                                    should_display_directly=True,
-                                    should_save_to_file=False)
+                                    should_display_directly=should_display_directly,
+                                    should_save_to_file=should_save_to_file)
 
     # Decode images
     decoded_sample_images_scaled = decoder_gan.predict(sample_images_scaled)
@@ -132,5 +151,5 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
     decoded_sample_images = decoded_sample_images[:, :, :, 0]
     image_displayer.display_samples(name=decoded_name,
                                     samples=decoded_sample_images,
-                                    should_display_directly=True,
-                                    should_save_to_file=False)
+                                    should_display_directly=should_display_directly,
+                                    should_save_to_file=should_save_to_file)
