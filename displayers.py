@@ -35,5 +35,5 @@ class SampleImageDisplayer(AbstractSampleDisplayer):
             plt.show()
 
         if should_save_to_file:
-            fig.savefig('images/{}.png'.format(name))
+            fig.savefig('output/{}.png'.format(name))
             plt.close()
