@@ -1,7 +1,7 @@
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.datasets import fashion_mnist
 
-from models import GeneratorModelCreator, DiscriminatorModelCreator, EncoderGanModelCreator, DecoderGanModelCreator
+from models import Image2ImageGeneratorModelCreator, DiscriminatorModelCreator, EncoderGanModelCreator, DecoderGanModelCreator
 from trainers import EncoderTrainer, DecoderTrainer
 from displayers import SampleImageDisplayer
 
@@ -53,7 +53,7 @@ Create models
 # Encoder
 
 # Create encoder generator
-encoder_generator_creator = GeneratorModelCreator(constants.INPUT_SHAPE)
+encoder_generator_creator = Image2ImageGeneratorModelCreator(constants.INPUT_SHAPE)
 encoder_generator = encoder_generator_creator.create_model()
 
 # Create encoder discriminator
@@ -69,7 +69,7 @@ encoder_gan = encoder_gan_creator.create_model()
 # Decoder
 
 # Create decoder generator
-decoder_generator_creator = GeneratorModelCreator(constants.INPUT_SHAPE)
+decoder_generator_creator = Image2ImageGeneratorModelCreator(constants.INPUT_SHAPE)
 decoder_generator = decoder_generator_creator.create_model()
 
 # Create GAN model to combine encoder generator and decoder generator

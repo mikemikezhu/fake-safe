@@ -25,7 +25,7 @@ Generator Model Creator
 """
 
 
-class GeneratorModelCreator(AbstractModelCreator):
+class Image2ImageGeneratorModelCreator(AbstractModelCreator):
 
     def __init__(self, input_shape):
         self.input_shape = input_shape
