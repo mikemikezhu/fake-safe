@@ -1,7 +1,7 @@
 import numpy as np
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Flatten, LeakyReLU, BatchNormalization, Reshape
+from tensorflow.keras.layers import Dense, Flatten, LeakyReLU, BatchNormalization, Reshape, Embedding, GlobalMaxPool1D
 from abc import ABC, abstractmethod
 
 import tensorflow as tf
@@ -50,6 +50,47 @@ class Image2ImageGeneratorModelCreator(AbstractModelCreator):
 
         model.add(Dense(np.prod(self.input_shape), activation='tanh'))
         model.add(Reshape(self.input_shape))
+
+        print('Generator model:')
+        model.summary()
+
+        return model
+
+
+class Text2ImageGeneratorModelCreator(AbstractModelCreator):
+
+    def __init__(self, vocabulary_size, max_sequence_length, output_shape):
+        self.vocabulary_size = vocabulary_size
+        self.max_sequence_length = max_sequence_length
+        self.output_shape = output_shape
+
+    def create_model(self):
+
+        model = Sequential()
+
+        # The model must be informed that some part of the data is
+        # padding and should be ignored by using masking
+        # See: https://www.tensorflow.org/guide/keras/masking_and_padding#masking
+        model.add(Embedding(input_dim=self.vocabulary_size,
+                            output_dim=100,
+                            input_length=self.max_sequence_length,
+                            mask_zero=True))
+        model.add(GlobalMaxPool1D())
+
+        model.add(Dense(256))
+        model.add(LeakyReLU(alpha=0.2))
+        model.add(BatchNormalization(momentum=0.8))
+
+        model.add(Dense(512))
+        model.add(LeakyReLU(alpha=0.2))
+        model.add(BatchNormalization(momentum=0.8))
+
+        model.add(Dense(1024))
+        model.add(LeakyReLU(alpha=0.2))
+        model.add(BatchNormalization(momentum=0.8))
+
+        model.add(Dense(np.prod(self.output_shape), activation='tanh'))
+        model.add(Reshape(self.output_shape))
 
         print('Generator model:')
         model.summary()
