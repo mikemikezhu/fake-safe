@@ -1,8 +1,9 @@
 from tensorflow.keras.datasets import fashion_mnist
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 from sklearn.model_selection import train_test_split
 
-from models import Text2ImageGeneratorModelCreator, DiscriminatorModelCreator, EncoderGanModelCreator, DecoderGanModelCreator
-from trainers import EncoderTrainer, DecoderTrainer
+from models import Text2ImageGeneratorModelCreator, Image2TextGeneratorModelCreator, DiscriminatorModelCreator, EncoderGanModelCreator, DecoderGanModelCreator
+from trainers import EncoderTrainer, ImageToTextDecoderTrainer
 
 from tokenizer import DefaultTokenizer
 from displayers import SampleTextDisplayer, SampleImageDisplayer
@@ -44,6 +45,7 @@ with open(constants.TEXT_2_IMAGE_DATASET_PATH, 'r') as data_file:
 
 corpus = []
 for line in lines:
+    line = 'startseq ' + line + ' endseq'
     corpus.append(line)
 
 # Tokenize text data
@@ -87,14 +89,16 @@ encoder_gan = encoder_gan_creator.create_model()
 
 # Decoder
 
-# # Create decoder generator
-# decoder_generator_creator = Image2ImageGeneratorModelCreator(
-#     constants.INPUT_SHAPE)
-# decoder_generator = decoder_generator_creator.create_model()
+# Create decoder generator
+decoder_generator_creator = Image2TextGeneratorModelCreator(constants.INPUT_SHAPE,
+                                                            vocabulary_size,
+                                                            max_sequence_length)
+decoder_generator = decoder_generator_creator.create_model()
 
-# # Create GAN model to combine encoder generator and decoder generator
+# Create GAN model to combine encoder generator and decoder generator
 # decoder_gan_creator = DecoderGanModelCreator(encoder_generator,
-#                                              decoder_generator)
+#                                              decoder_generator,
+#                                              loss='categorical_crossentropy')
 # decoder_gan = decoder_gan_creator.create_model()
 
 """
@@ -115,12 +119,13 @@ encoder_trainer = EncoderTrainer(encoder_generator,
 # Decoder
 
 # Create decoder trainer
-# decoder_trainer = DecoderTrainer(encoder_generator,
-#                                  decoder_generator,
-#                                  decoder_gan,
-#                                  training_epochs=constants.TRAINING_EPOCHS,
-#                                  batch_size=constants.BATCH_SIZE,
-#                                  input_data=fashion_image_train_scaled)
+decoder_trainer = ImageToTextDecoderTrainer(encoder_generator,
+                                            decoder_generator,
+                                            training_epochs=constants.TRAINING_EPOCHS,
+                                            batch_size=constants.BATCH_SIZE,
+                                            input_data=sequences_train,
+                                            max_sequence_length=max_sequence_length,
+                                            vocabulary_size=vocabulary_size)
 
 """
 Start training
@@ -138,8 +143,8 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
 
     # Train encoder
     encoder_trainer.train_model()
-    # # Train decoder
-    # decoder_trainer.train_model()
+    # Train decoder
+    decoder_trainer.train_model()
 
     # Select sample of sequences
     sample_indexes = np.random.randint(0,
@@ -180,14 +185,27 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
                                     should_display_directly=should_display_directly,
                                     should_save_to_file=should_save_to_file)
 
-    # # Decode images
-    # decoded_sample_images_scaled = decoder_gan.predict(sample_images_scaled)
+    # Decode images to text
+    sentences = []
+    for image in encoded_sample_images_scaled:
+        image = image.reshape((1, 28, 28, 1))
+        sentence = 'startseq'
+        for i in range(max_sequence_length):
+            sequence = [word_index[word]
+                        for word in sentence.split() if word in word_index]
+            sequence = pad_sequences([sequence],
+                                     maxlen=max_sequence_length)
+            probs = decoder_generator.predict([image, sequence])
+            index = np.argmax(probs)
+            word = index_word.get(index)
+            sentence += ' ' + word
+            if word == 'endseq':
+                break
+        sentences.append(sentence)
 
-    # # Display decoded images
-    # decoded_name = 'Decoded - {}'.format(current_round + 1)
-    # decoded_sample_images = (decoded_sample_images_scaled + 1) / 2 * 255
-    # decoded_sample_images = decoded_sample_images[:, :, :, 0]
-    # image_displayer.display_samples(name=decoded_name,
-    #                                 samples=decoded_sample_images,
-    #                                 should_display_directly=should_display_directly,
-    #                                 should_save_to_file=should_save_to_file)
+    # Display decoded text
+    decoded_name = '{} - 3 - Decoded'.format(current_round + 1)
+    text_displayer.display_samples(name=decoded_name,
+                                   samples=sentences,
+                                   should_display_directly=should_display_directly,
+                                   should_save_to_file=should_save_to_file)

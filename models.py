@@ -1,7 +1,7 @@
 import numpy as np
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Flatten, LeakyReLU, BatchNormalization, Reshape, Embedding, GlobalMaxPool1D
+from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.layers import add, BatchNormalization, Dense, Embedding, Flatten, GlobalMaxPool1D, Input, LeakyReLU, GRU, Lambda, Reshape
 from abc import ABC, abstractmethod
 
 import tensorflow as tf
@@ -51,7 +51,7 @@ class Image2ImageGeneratorModelCreator(AbstractModelCreator):
         model.add(Dense(np.prod(self.input_shape), activation='tanh'))
         model.add(Reshape(self.input_shape))
 
-        print('Generator model:')
+        print('Image to Image Generator model:')
         model.summary()
 
         return model
@@ -92,7 +92,54 @@ class Text2ImageGeneratorModelCreator(AbstractModelCreator):
         model.add(Dense(np.prod(self.output_shape), activation='tanh'))
         model.add(Reshape(self.output_shape))
 
-        print('Generator model:')
+        print('Text to Image Generator model:')
+        model.summary()
+
+        return model
+
+
+class Image2TextGeneratorModelCreator(AbstractModelCreator):
+
+    def __init__(self, input_shape, vocabulary_size, max_sequence_length):
+        self.input_shape = input_shape
+        self.vocabulary_size = vocabulary_size
+        self.max_sequence_length = max_sequence_length
+
+    def create_model(self):
+
+        # Image model to extract image features
+        image_input = Input(shape=self.input_shape)
+        image_flatten = Flatten()(image_input)
+
+        image_dense_1 = Dense(512)(image_flatten)
+        image_relu_1 = LeakyReLU(0.2)(image_dense_1)
+
+        image_dense_2 = Dense(256)(image_relu_1)
+        image_relu_2 = LeakyReLU(0.2)(image_dense_2)
+
+        # Text model to extract sequence features
+        text_input = Input(shape=(self.max_sequence_length))
+        text_embedding = Embedding(input_dim=self.vocabulary_size,
+                                   output_dim=100,
+                                   mask_zero=True)(text_input)
+        text_lstm = GRU(256)(text_embedding)
+
+        # Merge the two input models
+        merged_input = add([image_relu_2, text_lstm])
+        merged_dense = Dense(256)(merged_input)
+        merged_relu = LeakyReLU(0.2)(merged_dense)
+
+        outputs = Dense(self.vocabulary_size,
+                        activation='softmax')(merged_relu)
+        model = Model(inputs=[image_input, text_input],
+                      outputs=outputs)
+
+        optimizer = Adam(0.0002, 0.5)
+        model.compile(loss='sparse_categorical_crossentropy',
+                      optimizer=optimizer,
+                      metrics=['accuracy'])
+
+        print('Image to Text Generator model:')
         model.summary()
 
         return model

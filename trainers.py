@@ -3,6 +3,7 @@ from numpy import zeros
 import numpy as np
 
 from abc import ABC, abstractmethod
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 """
 Abstract Model Trainer
@@ -152,3 +153,106 @@ class DecoderTrainer(AbstractModelTrainer):
         x_output = x_input
         loss, accuracy = self.decoder_gan.train_on_batch(x_input, x_output)
         return loss, accuracy
+
+
+class ImageToTextDecoderTrainer(AbstractModelTrainer):
+
+    def __init__(self,
+                 encoder_generator,
+                 decoder_generator,
+                 training_epochs,
+                 batch_size,
+                 input_data,  # Input data of decoder
+                 max_sequence_length,
+                 vocabulary_size):
+
+        self.encoder_generator = encoder_generator
+        self.decoder_generator = decoder_generator
+
+        self.training_epochs = training_epochs
+        self.batch_size = batch_size
+
+        self.input_data = input_data
+        self.max_sequence_length = max_sequence_length
+        self.vocabulary_size = vocabulary_size
+
+    def train_model(self):
+
+        print('========== Start decoder training ==========')
+        for current_epoch in range(self.training_epochs):
+
+            # Select a random batch of data
+            input_indexes = np.random.randint(0,
+                                              self.input_data.shape[0],
+                                              self.batch_size)
+            sequences = self.input_data[input_indexes]
+
+            # ---------------------
+            #  Predict encoded images
+            # ---------------------
+            encoded_images = self.encoder_generator.predict(sequences)
+
+            # ---------------------
+            #  Train decoder generator
+            # ---------------------
+            loss, accuracy = self.__train_decoder_generator(encoded_images,
+                                                            sequences)
+
+            print('[Decoder] - epochs: {}, loss: {}, accuracy: {}'.format(
+                (current_epoch + 1), loss, accuracy))
+
+    def __train_decoder_generator(self, encoded_images, sequences):
+
+        # Create data generator
+        x_images, x_sequences, y_targets = self.__create_data_generator(images=encoded_images,
+                                                                        sequences=sequences)
+
+        # Train decoder generator
+        loss, accuracy = self.decoder_generator.train_on_batch([x_images, x_sequences],
+                                                               y_targets)
+        return loss, accuracy
+
+    def __create_data_generator(self, images, sequences):
+
+        input_images = []
+        input_sequences = []
+        output_targets = []
+
+        for i in range(self.batch_size):
+
+            image = images[i]
+            sequence = sequences[i]
+
+            for j in range(1, self.max_sequence_length):
+
+                # Split the sequence into input and output pair
+                # For example:
+                # For the sentence "I am handsome"
+                # If the input is "I", then the output target should be "am"
+                # If the input is "I am", then the output target should be "handsome"
+                input_sequence = sequence[:j]
+                output_target = sequence[j]
+
+                if output_target == 0:
+                    # Since the we use "0" to pad the sequences to the same length
+                    # For example, if the sentence has 3 words while the longest one has 6 words,
+                    # then the sequences will be like [1, 2, 3, 0, 0, 0]
+                    # Therefore, if the target word index is "0",
+                    # Then it means there will be no more words in the sentence
+                    break
+
+                # Create input and output data
+                input_images.append(image)
+                input_sequences.append(input_sequence)
+                output_targets.append(output_target)
+
+        # Pad sequence
+        input_sequences = pad_sequences(input_sequences,
+                                        maxlen=self.max_sequence_length,
+                                        padding='post')
+
+        x_images = np.asarray(input_images)
+        x_sequences = np.asarray(input_sequences)
+        y_targets = np.asarray(output_targets)
+
+        return x_images, x_sequences, y_targets
