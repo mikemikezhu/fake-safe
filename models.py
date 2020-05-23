@@ -25,7 +25,7 @@ Generator Model Creator
 """
 
 
-class Image2ImageGeneratorModelCreator(AbstractModelCreator):
+class ImageGeneratorModelCreator(AbstractModelCreator):
 
     def __init__(self, input_shape):
         self.input_shape = input_shape
@@ -57,89 +57,124 @@ class Image2ImageGeneratorModelCreator(AbstractModelCreator):
         return model
 
 
-class Text2ImageGeneratorModelCreator(AbstractModelCreator):
+class TextEncoderGeneratorModelCreator(AbstractModelCreator):
 
-    def __init__(self, vocabulary_size, max_sequence_length, output_shape):
+    def __init__(self, vocabulary_size, max_sequence_length):
         self.vocabulary_size = vocabulary_size
         self.max_sequence_length = max_sequence_length
-        self.output_shape = output_shape
 
     def create_model(self):
 
-        model = Sequential()
+        # Text model to extract sequence features using RNN
+        text_input = Input(shape=(self.max_sequence_length))
+        text_embedding = Embedding(input_dim=self.vocabulary_size,
+                                   output_dim=100,
+                                   mask_zero=True)(text_input)
 
-        # The model must be informed that some part of the data is
-        # padding and should be ignored by using masking
-        # See: https://www.tensorflow.org/guide/keras/masking_and_padding#masking
-        model.add(Embedding(input_dim=self.vocabulary_size,
-                            output_dim=100,
-                            input_length=self.max_sequence_length,
-                            mask_zero=True))
-        model.add(GlobalMaxPool1D())
+        # Return the hidden state of the final time stamp of RNN
+        text_rnn = GRU(256, return_state=True)
+        _, state_h = text_rnn(text_embedding)
 
-        model.add(Dense(256))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(BatchNormalization(momentum=0.8))
+        # Create model
+        model = Model(inputs=text_input, outputs=state_h)
 
-        model.add(Dense(512))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(BatchNormalization(momentum=0.8))
-
-        model.add(Dense(1024))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(BatchNormalization(momentum=0.8))
-
-        model.add(Dense(np.prod(self.output_shape), activation='tanh'))
-        model.add(Reshape(self.output_shape))
-
-        print('Text to Image Generator model:')
+        print('Text to State Generator model:')
         model.summary()
 
         return model
 
 
-class Image2TextGeneratorModelCreator(AbstractModelCreator):
+class StateEncoderGeneratorModelCreator(AbstractModelCreator):
 
-    def __init__(self, input_shape, vocabulary_size, max_sequence_length):
+    def __init__(self, output_shape):
+        self.output_shape = output_shape
+
+    def create_model(self):
+
+        # Generate image using text model hidden state
+        state_input = Input(shape=(256,))
+
+        image_dense_1 = Dense(256)(state_input)
+        image_relu_1 = LeakyReLU(alpha=0.2)(image_dense_1)
+        image_norm_1 = BatchNormalization(momentum=0.8)(image_relu_1)
+
+        image_dense_2 = Dense(512)(image_norm_1)
+        image_relu_2 = LeakyReLU(alpha=0.2)(image_dense_2)
+        image_norm_2 = BatchNormalization(momentum=0.8)(image_relu_2)
+
+        image_dense_3 = Dense(1024)(image_norm_2)
+        image_relu_3 = LeakyReLU(alpha=0.2)(image_dense_3)
+        image_norm_3 = BatchNormalization(momentum=0.8)(image_relu_3)
+
+        image_dense_output = Dense(np.prod(self.output_shape),
+                                   activation='tanh')(image_norm_3)
+        image_output = Reshape(self.output_shape)(image_dense_output)
+
+        model = Model(inputs=state_input, outputs=image_output)
+
+        print('State to Image Generator model:')
+        model.summary()
+
+        return model
+
+
+class StateDecoderGeneratorModelCreator(AbstractModelCreator):
+
+    def __init__(self, input_shape):
         self.input_shape = input_shape
+
+    def create_model(self):
+
+        # Image model to extract image features
+        model = Sequential()
+        model.add(Flatten(input_shape=self.input_shape))
+
+        model.add(Dense(512))
+        model.add(LeakyReLU(alpha=0.2))
+
+        model.add(Dense(256))
+        model.add(LeakyReLU(alpha=0.2))  # Hidden state
+
+        print('Image to State Generator model:')
+        model.summary()
+
+        return model
+
+
+class TextDecoderGeneratorModelCreator(AbstractModelCreator):
+
+    def __init__(self, vocabulary_size, max_sequence_length):
         self.vocabulary_size = vocabulary_size
         self.max_sequence_length = max_sequence_length
 
     def create_model(self):
 
-        # Image model to extract image features
-        image_input = Input(shape=self.input_shape)
-        image_flatten = Flatten()(image_input)
-
-        image_dense_1 = Dense(512)(image_flatten)
-        image_relu_1 = LeakyReLU(0.2)(image_dense_1)
-
-        image_dense_2 = Dense(256)(image_relu_1)
-        image_relu_2 = LeakyReLU(0.2)(image_dense_2)
+        state_input = Input(shape=(256,))  # Hidden state
 
         # Text model to extract sequence features
         text_input = Input(shape=(self.max_sequence_length))
         text_embedding = Embedding(input_dim=self.vocabulary_size,
                                    output_dim=100,
                                    mask_zero=True)(text_input)
-        text_lstm = GRU(256)(text_embedding)
 
-        # Merge the two input models
-        merged_input = add([image_relu_2, text_lstm])
-        merged_dense = Dense(256)(merged_input)
-        merged_relu = LeakyReLU(0.2)(merged_dense)
+        text_rnn = GRU(256)
+        text_gru_output = text_rnn(text_embedding,
+                                   initial_state=state_input)
 
-        outputs = Dense(self.vocabulary_size,
-                        activation='softmax')(merged_relu)
-        model = Model(inputs=[image_input, text_input],
-                      outputs=outputs)
+        text_dense_output = Dense(self.vocabulary_size,
+                                  activation='softmax')
+        text_output = text_dense_output(text_gru_output)
+
+        # Create model
+        model = Model(inputs=[state_input, text_input],
+                      outputs=text_output)
 
         optimizer = Adam(0.0002, 0.5)
-        model.compile(loss='sparse_categorical_crossentropy',
+        model.compile(loss='categorical_crossentropy',
                       optimizer=optimizer,
                       metrics=['accuracy'])
 
-        print('Image to Text Generator model:')
+        print('State to Text Generator model:')
         model.summary()
 
         return model
@@ -205,6 +240,42 @@ class EncoderGanModelCreator(AbstractModelCreator):
         model = Sequential()
 
         model.add(self.encoder_generator)
+        model.add(self.encoder_discriminator)
+
+        optimizer = Adam(0.0002, 0.5)
+        model.compile(loss='mse',
+                      optimizer=optimizer,
+                      metrics=['accuracy'])
+
+        print('Encoder GAN model:')
+        model.summary()
+
+        return model
+
+
+class TextEncoderGanModelCreator(AbstractModelCreator):
+
+    def __init__(self,
+                 text_encoder_generator,
+                 state_encoder_generator,
+                 encoder_discriminator):
+        self.text_encoder_generator = text_encoder_generator
+        self.state_encoder_generator = state_encoder_generator
+        self.encoder_discriminator = encoder_discriminator
+
+    def create_model(self):
+
+        # 1) Set generator to trainable
+        self.text_encoder_generator.trainable = True
+        self.state_encoder_generator.trainable = True
+        # 2) Set discriminator to non-trainable
+        self.encoder_discriminator.trainable = False
+
+        # Create logical model to combine encoder generator and encoder discriminator
+        model = Sequential()
+
+        model.add(self.text_encoder_generator)
+        model.add(self.state_encoder_generator)
         model.add(self.encoder_discriminator)
 
         optimizer = Adam(0.0002, 0.5)

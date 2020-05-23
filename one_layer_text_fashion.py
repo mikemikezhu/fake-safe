@@ -2,8 +2,10 @@ from tensorflow.keras.datasets import fashion_mnist
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from sklearn.model_selection import train_test_split
 
-from models import Text2ImageGeneratorModelCreator, Image2TextGeneratorModelCreator, DiscriminatorModelCreator, EncoderGanModelCreator, DecoderGanModelCreator
-from trainers import EncoderTrainer, ImageToTextDecoderTrainer
+from models import TextEncoderGeneratorModelCreator, StateEncoderGeneratorModelCreator
+from models import StateDecoderGeneratorModelCreator, TextDecoderGeneratorModelCreator
+from models import DiscriminatorModelCreator, TextEncoderGanModelCreator, DecoderGanModelCreator
+from trainers import TextEncoderTrainer, DecoderTrainer, TextDecoderTrainer
 
 from tokenizer import DefaultTokenizer
 from displayers import SampleTextDisplayer, SampleImageDisplayer
@@ -69,63 +71,80 @@ fashion_image_train_scaled = (fashion_image_train / 255.0) * 2 - 1
 Create models
 """
 
-# Encoder
+""" Encoder """
 
-# Create encoder generator
-encoder_generator_creator = Text2ImageGeneratorModelCreator(vocabulary_size,
-                                                            max_sequence_length,
-                                                            constants.OUTPUT_SHAPE)
-encoder_generator = encoder_generator_creator.create_model()
+# text -> state
+text_encoder_creator = TextEncoderGeneratorModelCreator(vocabulary_size,
+                                                        max_sequence_length)
+text_encoder = text_encoder_creator.create_model()
 
-# Create encoder discriminator
+# state -> image
+state_encoder_creator = StateEncoderGeneratorModelCreator(
+    constants.OUTPUT_SHAPE)
+state_encoder = state_encoder_creator.create_model()
+
+# Discriminator
 encoder_discriminator_creator = DiscriminatorModelCreator(
     constants.INPUT_SHAPE)
 encoder_discriminator = encoder_discriminator_creator.create_model()
 
-# Create GAN model to combine encoder generator and discriminator
-encoder_gan_creator = EncoderGanModelCreator(encoder_generator,
-                                             encoder_discriminator)
+# GAN (Combine encoder generator and discriminator)
+encoder_gan_creator = TextEncoderGanModelCreator(text_encoder,
+                                                 state_encoder,
+                                                 encoder_discriminator)
 encoder_gan = encoder_gan_creator.create_model()
 
-# Decoder
+""" Decoder """
 
-# Create decoder generator
-decoder_generator_creator = Image2TextGeneratorModelCreator(constants.INPUT_SHAPE,
-                                                            vocabulary_size,
-                                                            max_sequence_length)
-decoder_generator = decoder_generator_creator.create_model()
+# image -> state
+state_decoder_creator = StateDecoderGeneratorModelCreator(
+    constants.INPUT_SHAPE)
+state_decoder = state_decoder_creator.create_model()
 
-# Create GAN model to combine encoder generator and decoder generator
-# decoder_gan_creator = DecoderGanModelCreator(encoder_generator,
-#                                              decoder_generator,
-#                                              loss='categorical_crossentropy')
-# decoder_gan = decoder_gan_creator.create_model()
+# state -> text
+text_decoder_creator = TextDecoderGeneratorModelCreator(vocabulary_size,
+                                                        max_sequence_length)
+text_decoder = text_decoder_creator.create_model()
+
+# GAN (Combine state2image generator and image2state generator)
+decoder_state_gan_creator = DecoderGanModelCreator(state_encoder,
+                                                   state_decoder)
+decoder_state_gan = decoder_state_gan_creator.create_model()
 
 """
 Create trainers
 """
 
-# Encoder
+""" Encoder """
 
-# Create encoder trainer
-encoder_trainer = EncoderTrainer(encoder_generator,
-                                 encoder_discriminator,
-                                 encoder_gan,
-                                 training_epochs=constants.TRAINING_EPOCHS,
-                                 batch_size=constants.BATCH_SIZE,
-                                 input_data=sequences_train,
-                                 exp_output_data=fashion_image_train_scaled)
+# text -> state -> image
+encoder_trainer = TextEncoderTrainer(text_encoder,
+                                     state_encoder,
+                                     encoder_discriminator,
+                                     encoder_gan,
+                                     training_epochs=constants.TRAINING_EPOCHS,
+                                     batch_size=constants.BATCH_SIZE,
+                                     input_data=sequences_train,
+                                     exp_output_data=fashion_image_train_scaled)
 
-# Decoder
+""" Decoder """
 
-# Create decoder trainer
-decoder_trainer = ImageToTextDecoderTrainer(encoder_generator,
-                                            decoder_generator,
-                                            training_epochs=constants.TRAINING_EPOCHS,
-                                            batch_size=constants.BATCH_SIZE,
-                                            input_data=sequences_train,
-                                            max_sequence_length=max_sequence_length,
-                                            vocabulary_size=vocabulary_size)
+# state -> image -> state
+decoder_state_trainer = DecoderTrainer(state_encoder,
+                                       state_decoder,
+                                       decoder_state_gan,
+                                       training_epochs=constants.TRAINING_EPOCHS,
+                                       batch_size=constants.BATCH_SIZE,
+                                       input_data=None)  # TODO
+
+# text -> state -> text
+decoder_text_trainer = TextDecoderTrainer(text_encoder,
+                                          text_decoder,
+                                          training_epochs=constants.TRAINING_EPOCHS,
+                                          batch_size=constants.BATCH_SIZE,
+                                          input_data=sequences_train,
+                                          max_sequence_length=max_sequence_length,
+                                          vocabulary_size=vocabulary_size)
 
 """
 Start training
@@ -141,10 +160,19 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
     print('Round: {}'.format(current_round + 1))
     print('************************')
 
-    # Train encoder
+    """ Train """
+
+    # text -> state -> image
     encoder_trainer.train_model()
-    # Train decoder
-    decoder_trainer.train_model()
+
+    # state -> image -> state
+    hidden_states = text_encoder.predict(sequences_train)
+    decoder_state_trainer.train(hidden_states, None)
+
+    # text -> state -> text
+    decoder_text_trainer.train_model()
+
+    """ Inference """
 
     # Select sample of sequences
     sample_indexes = np.random.randint(0,
@@ -174,7 +202,8 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
                                    should_save_to_file=should_save_to_file)
 
     # Encode images
-    encoded_sample_images_scaled = encoder_generator.predict(sample_sequences)
+    sample_states = text_encoder.predict(sample_sequences)
+    encoded_sample_images_scaled = state_encoder.predict(sample_states)
 
     # Display encoded images
     encoded_name = '{} - 2 - Encoded'.format(current_round + 1)
@@ -191,13 +220,22 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
         image = image.reshape((1, 28, 28, 1))
         sentence = 'startseq'
         for i in range(max_sequence_length):
+
+            # Convert sentence to sequence
             sequence = [word_index[word]
                         for word in sentence.split() if word in word_index]
             sequence = pad_sequences([sequence],
                                      maxlen=max_sequence_length)
-            probs = decoder_generator.predict([image, sequence])
+
+            # Predict hidden state
+            states = state_decoder.predict(image)
+
+            # Predict target word
+            probs = text_decoder.predict([states, sequence])
             index = np.argmax(probs)
             word = index_word.get(index)
+
+            # Append target word to sentence
             sentence += ' ' + word
             if word == 'endseq':
                 break

@@ -1,7 +1,7 @@
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.datasets import fashion_mnist
 
-from models import Image2ImageGeneratorModelCreator, DiscriminatorModelCreator, EncoderGanModelCreator, DecoderGanModelCreator
+from models import ImageGeneratorModelCreator, DiscriminatorModelCreator, EncoderGanModelCreator, DecoderGanModelCreator
 from trainers import EncoderTrainer, DecoderTrainer
 from displayers import SampleImageDisplayer
 
@@ -54,7 +54,7 @@ Outer layer models -> Inner layer models -> Outer layer models
 """ Encoder - Outer layer """
 
 # Create encoder generator
-outer_encoder_generator_creator = Image2ImageGeneratorModelCreator(
+outer_encoder_generator_creator = ImageGeneratorModelCreator(
     constants.INPUT_SHAPE)
 outer_encoder_generator = outer_encoder_generator_creator.create_model()
 
@@ -71,7 +71,7 @@ outer_encoder_gan = outer_encoder_gan_creator.create_model()
 """ Encoder - Inner layer """
 
 # Create encoder generator
-inner_encoder_generator_creator = Image2ImageGeneratorModelCreator(constants.INPUT_SHAPE)
+inner_encoder_generator_creator = ImageGeneratorModelCreator(constants.INPUT_SHAPE)
 inner_encoder_generator = inner_encoder_generator_creator.create_model()
 
 # Create encoder discriminator
@@ -87,7 +87,7 @@ inner_encoder_gan = inner_encoder_gan_creator.create_model()
 """ Decoder - Inner layer """
 
 # Create decoder generator
-inner_decoder_generator_creator = Image2ImageGeneratorModelCreator(constants.INPUT_SHAPE)
+inner_decoder_generator_creator = ImageGeneratorModelCreator(constants.INPUT_SHAPE)
 inner_decoder_generator = inner_decoder_generator_creator.create_model()
 
 # Create GAN model to combine encoder generator and decoder generator
@@ -98,7 +98,7 @@ inner_decoder_gan = inner_decoder_gan_creator.create_model()
 """ Decoder - Outer layer """
 
 # Create decoder generator
-outer_decoder_generator_creator = Image2ImageGeneratorModelCreator(constants.INPUT_SHAPE)
+outer_decoder_generator_creator = ImageGeneratorModelCreator(constants.INPUT_SHAPE)
 outer_decoder_generator = outer_decoder_generator_creator.create_model()
 
 # Create GAN model to combine encoder generator and decoder generator
