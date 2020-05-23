@@ -1,7 +1,10 @@
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.datasets import fashion_mnist
 
-from models import ImageGeneratorModelCreator, DiscriminatorModelCreator, EncoderGanModelCreator, DecoderGanModelCreator
+from generator_models import ImageGeneratorModelCreator
+from discriminator_models import DiscriminatorModelCreator
+from gan_models import EncoderGanModelCreator, DecoderGanModelCreator
+
 from trainers import EncoderTrainer, DecoderTrainer
 from displayers import SampleImageDisplayer
 
@@ -71,7 +74,8 @@ outer_encoder_gan = outer_encoder_gan_creator.create_model()
 """ Encoder - Inner layer """
 
 # Create encoder generator
-inner_encoder_generator_creator = ImageGeneratorModelCreator(constants.INPUT_SHAPE)
+inner_encoder_generator_creator = ImageGeneratorModelCreator(
+    constants.INPUT_SHAPE)
 inner_encoder_generator = inner_encoder_generator_creator.create_model()
 
 # Create encoder discriminator
@@ -87,7 +91,8 @@ inner_encoder_gan = inner_encoder_gan_creator.create_model()
 """ Decoder - Inner layer """
 
 # Create decoder generator
-inner_decoder_generator_creator = ImageGeneratorModelCreator(constants.INPUT_SHAPE)
+inner_decoder_generator_creator = ImageGeneratorModelCreator(
+    constants.INPUT_SHAPE)
 inner_decoder_generator = inner_decoder_generator_creator.create_model()
 
 # Create GAN model to combine encoder generator and decoder generator
@@ -98,7 +103,8 @@ inner_decoder_gan = inner_decoder_gan_creator.create_model()
 """ Decoder - Outer layer """
 
 # Create decoder generator
-outer_decoder_generator_creator = ImageGeneratorModelCreator(constants.INPUT_SHAPE)
+outer_decoder_generator_creator = ImageGeneratorModelCreator(
+    constants.INPUT_SHAPE)
 outer_decoder_generator = outer_decoder_generator_creator.create_model()
 
 # Create GAN model to combine encoder generator and decoder generator

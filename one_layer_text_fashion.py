@@ -2,9 +2,12 @@ from tensorflow.keras.datasets import fashion_mnist
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from sklearn.model_selection import train_test_split
 
-from models import TextEncoderGeneratorModelCreator, StateEncoderGeneratorModelCreator
-from models import StateDecoderGeneratorModelCreator, TextDecoderGeneratorModelCreator
-from models import DiscriminatorModelCreator, TextEncoderGanModelCreator, DecoderGanModelCreator
+from generator_models import TextEncoderGeneratorModelCreator, StateEncoderGeneratorModelCreator
+from generator_models import StateDecoderGeneratorModelCreator, TextDecoderGeneratorModelCreator
+from discriminator_models import DiscriminatorModelCreator
+from gan_models import TextEncoderGanModelCreator
+from gan_models import DecoderGanModelCreator
+
 from trainers import TextEncoderTrainer, DecoderTrainer, TextDecoderTrainer
 
 from tokenizer import DefaultTokenizer

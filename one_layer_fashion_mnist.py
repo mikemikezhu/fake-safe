@@ -1,7 +1,10 @@
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.datasets import fashion_mnist
 
-from models import ImageGeneratorModelCreator, DiscriminatorModelCreator, EncoderGanModelCreator, DecoderGanModelCreator
+from generator_models import ImageGeneratorModelCreator
+from discriminator_models import DiscriminatorModelCreator
+from gan_models import EncoderGanModelCreator, DecoderGanModelCreator
+
 from trainers import EncoderTrainer, DecoderTrainer
 from displayers import SampleImageDisplayer
 
