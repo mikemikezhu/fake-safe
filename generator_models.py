@@ -2,7 +2,7 @@ from abstract_models import AbstractModelCreator
 import numpy as np
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.models import Sequential, Model
-from tensorflow.keras.layers import add, BatchNormalization, Dense, Embedding, Flatten, GlobalMaxPool1D, Input, LeakyReLU, GRU, Lambda, Reshape
+from tensorflow.keras.layers import add, BatchNormalization, Dense, Dropout, Embedding, Flatten, GlobalMaxPool1D, Input, LeakyReLU, GRU, Lambda, Reshape
 
 import tensorflow as tf
 print('Tensorflow version: {}'.format(tf.__version__))
@@ -128,11 +128,19 @@ class StateDecoderGeneratorModelCreator(AbstractModelCreator):
         model = Sequential()
         model.add(Flatten(input_shape=self.input_shape))
 
-        model.add(Dense(512))
-        model.add(LeakyReLU(alpha=0.2))
+        model.add(Dense(256, activation='relu'))
+        model.add(Dropout(0.2))
 
-        model.add(Dense(256))
-        model.add(LeakyReLU(alpha=0.2))  # Hidden state
+        model.add(Dense(512, activation='relu'))
+        model.add(Dropout(0.2))
+
+        model.add(Dense(1024, activation='relu'))
+        model.add(Dropout(0.2))
+
+        model.add(Dense(512, activation='relu'))
+        model.add(Dropout(0.2))
+
+        model.add(Dense(256, activation='linear'))  # Hidden state
 
         print('Image to State Generator model:')
         model.summary()
