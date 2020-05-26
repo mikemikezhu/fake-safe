@@ -2,7 +2,7 @@ from abstract_models import AbstractModelCreator
 import numpy as np
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.models import Sequential, Model
-from tensorflow.keras.layers import add, BatchNormalization, Dense, Dropout, Embedding, Flatten, GlobalMaxPool1D, Input, LeakyReLU, GRU, Lambda, Reshape
+from tensorflow.keras.layers import add, BatchNormalization, Dense, Dropout, Embedding, Flatten, GlobalMaxPool1D, Input, LeakyReLU, LSTM, GRU, TimeDistributed, Lambda, Reshape
 
 import tensorflow as tf
 print('Tensorflow version: {}'.format(tf.__version__))
@@ -42,36 +42,6 @@ class ImageGeneratorModelCreator(AbstractModelCreator):
         model.add(Reshape(self.input_shape))
 
         print('Image to Image Generator model:')
-        model.summary()
-
-        return model
-
-
-""" Text -> State """
-
-
-class TextEncoderGeneratorModelCreator(AbstractModelCreator):
-
-    def __init__(self, vocabulary_size, max_sequence_length):
-        self.vocabulary_size = vocabulary_size
-        self.max_sequence_length = max_sequence_length
-
-    def create_model(self):
-
-        # Text model to extract sequence features using RNN
-        text_input = Input(shape=(self.max_sequence_length))
-        text_embedding = Embedding(input_dim=self.vocabulary_size,
-                                   output_dim=100,
-                                   mask_zero=True)(text_input)
-
-        # Return the hidden state of the final time stamp of RNN
-        text_rnn = GRU(256, return_state=True)
-        _, state_h = text_rnn(text_embedding)
-
-        # Create model
-        model = Model(inputs=text_input, outputs=state_h)
-
-        print('Text to State Generator model:')
         model.summary()
 
         return model
@@ -148,43 +118,104 @@ class StateDecoderGeneratorModelCreator(AbstractModelCreator):
         return model
 
 
-""" State -> Text """
+""" Train: Text -> State -> Text """
 
 
-class TextDecoderGeneratorModelCreator(AbstractModelCreator):
+class TextTrainModelCreator(AbstractModelCreator):
 
     def __init__(self, vocabulary_size, max_sequence_length):
         self.vocabulary_size = vocabulary_size
         self.max_sequence_length = max_sequence_length
 
     def create_model(self):
+        """ Create text generator train model """
+        # Text generator train model includes encoder and decoder
+        # Reference:
+        # https://blog.keras.io/a-ten-minute-introduction-to-sequence-to-sequence-learning-in-keras.html
+        encoder_inputs = Input(shape=(self.max_sequence_length,))
+        encoder_embedding = Embedding(self.vocabulary_size,
+                                      256,
+                                      mask_zero=True)
+        encoder_inputs_x = encoder_embedding(encoder_inputs)
+        # Discard the output of the encoder RNN, only focus on the states
+        encoder_lstm = GRU(256, return_state=True)
+        encoder_outputs, state_h = encoder_lstm(encoder_inputs_x)
+        encoder_states = state_h
 
-        state_input = Input(shape=(256,))  # Hidden state
+        # Set up the decoder, using "encoder_states" as initial state.
+        decoder_inputs = Input(shape=(self.max_sequence_length,))
+        decoder_embedding = Embedding(self.vocabulary_size,
+                                      256,
+                                      mask_zero=True)
+        decoder_inputs_x = decoder_embedding(decoder_inputs)
+        decoder_lstm = GRU(256,
+                           return_sequences=True,
+                           return_state=True)
+        decoder_outputs, _ = decoder_lstm(decoder_inputs_x,
+                                          initial_state=encoder_states)
+        decoder_dense = TimeDistributed(Dense(self.vocabulary_size,
+                                              activation='softmax'))
+        decoder_outputs = decoder_dense(decoder_outputs)
 
-        # Text model to extract sequence features
-        text_input = Input(shape=(self.max_sequence_length))
-        text_embedding = Embedding(input_dim=self.vocabulary_size,
-                                   output_dim=100,
-                                   mask_zero=True)(text_input)
+        # Define the model that will turn
+        # "encoder_input_data" & "decoder_input_data" into "decoder_target_data"
+        train_model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
+        train_model.compile(optimizer='rmsprop',
+                            loss='categorical_crossentropy',
+                            metrics=['accuracy'])
+        return train_model, encoder_embedding, encoder_lstm, decoder_embedding, decoder_lstm, decoder_dense
 
-        text_rnn = GRU(256)
-        text_gru_output = text_rnn(text_embedding,
-                                   initial_state=state_input)
 
-        text_dense_output = Dense(self.vocabulary_size,
-                                  activation='softmax')
-        text_output = text_dense_output(text_gru_output)
+""" Inference: Text -> State """
 
-        # Create model
-        model = Model(inputs=[state_input, text_input],
-                      outputs=text_output)
 
-        optimizer = Adam(0.0002, 0.5)
-        model.compile(loss='categorical_crossentropy',
-                      optimizer=optimizer,
-                      metrics=['accuracy'])
+class TextEncoderGeneratorModelCreator(AbstractModelCreator):
 
-        print('State to Text Generator model:')
-        model.summary()
+    def __init__(self,
+                 encoder_embedding,
+                 encoder_lstm,
+                 max_sequence_length):
+        self.encoder_embedding = encoder_embedding
+        self.encoder_lstm = encoder_lstm
+        self.max_sequence_length = max_sequence_length
 
-        return model
+    def create_model(self):
+        """ Create text inference encoder model """
+        # The encoder model remains the same
+        encoder_inputs = Input(shape=(self.max_sequence_length,))
+        encoder_inputs_x = self.encoder_embedding(encoder_inputs)
+        encoder_outputs, state_h = self.encoder_lstm(encoder_inputs_x)
+        encoder_states = state_h
+        encoder_model = Model(encoder_inputs, encoder_states)
+        return encoder_model
+
+
+""" Inference: State -> Text """
+
+
+class TextDecoderGeneratorModelCreator(AbstractModelCreator):
+
+    def __init__(self,
+                 decoder_embedding,
+                 decoder_lstm,
+                 decoder_dense):
+        self.decoder_embedding = decoder_embedding
+        self.decoder_lstm = decoder_lstm
+        self.decoder_dense = decoder_dense
+
+    def create_model(self):
+        """ Create text inference decoder model """
+        # Each time step will be only single word in the decoder input
+        decoder_inputs_single = Input(shape=(1,))
+        decoder_inputs_single_x = self.decoder_embedding(decoder_inputs_single)
+
+        decoder_state_input_h = Input(shape=(256,))
+        decoder_states_inputs = [decoder_state_input_h]
+        decoder_outputs_single, decoder_state_h = self.decoder_lstm(decoder_inputs_single_x,
+                                                                    initial_state=decoder_states_inputs)
+        decoder_states_outputs = [decoder_state_h]
+        decoder_outputs_single = self.decoder_dense(decoder_outputs_single)
+        decoder_model = Model(
+            [decoder_inputs_single] + decoder_states_inputs,
+            [decoder_outputs_single] + decoder_states_outputs)
+        return decoder_model
