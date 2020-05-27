@@ -45,50 +45,6 @@ class EncoderGanModelCreator(AbstractModelCreator):
 
 
 """
-Text Encoder GAN Model Creator
-This is a logical model to combine text and state encoder generator and encoder discriminator
-"""
-
-
-class TextEncoderGanModelCreator(AbstractModelCreator):
-
-    def __init__(self,
-                 text_encoder_generator,
-                 state_encoder_generator,
-                 encoder_discriminator):
-        self.text_encoder_generator = text_encoder_generator
-        self.state_encoder_generator = state_encoder_generator
-        self.encoder_discriminator = encoder_discriminator
-
-    def create_model(self):
-
-        # 1) Set generator to trainable
-        self.text_encoder_generator.trainable = True
-        self.state_encoder_generator.trainable = True
-        # 2) Set discriminator to non-trainable
-        self.encoder_discriminator.trainable = False
-
-        # Create logical model to combine encoder generator and encoder discriminator
-        model = Sequential()
-
-        model.add(self.text_encoder_generator)
-        model.add(self.state_encoder_generator)
-        model.add(self.encoder_discriminator)
-
-        optimizer = Adam(0.0002, 0.5)
-        model.compile(loss='mse',
-                      optimizer=optimizer,
-                      metrics=['accuracy'])
-
-        print('Encoder GAN model:')
-        model.summary()
-
-        return model
-
-
-print('Tensorflow version: {}'.format(tf.__version__))
-
-"""
 Decoder GAN Model Creator
 This is a logical model to combine encoder generator and decoder generator
 """
@@ -98,9 +54,11 @@ class DecoderGanModelCreator(AbstractModelCreator):
 
     def __init__(self,
                  encoder_generator,
-                 decoder_generator):
+                 decoder_generator,
+                 loss='mae'):
         self.encoder_generator = encoder_generator
         self.decoder_generator = decoder_generator
+        self.loss = loss
 
     def create_model(self):
 
@@ -116,7 +74,7 @@ class DecoderGanModelCreator(AbstractModelCreator):
         model.add(self.decoder_generator)
 
         optimizer = Adam(0.0002, 0.5)
-        model.compile(loss='mae',
+        model.compile(loss=self.loss,
                       optimizer=optimizer,
                       metrics=['accuracy'])
 
