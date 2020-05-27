@@ -144,6 +144,7 @@ class DecoderTrainer(AbstractModelTrainer):
         output_data = input_data
         self.decoder_gan.fit(input_data,
                              output_data,
+                             verbose=2,
                              epochs=self.training_epochs,
                              batch_size=self.batch_size)
 
