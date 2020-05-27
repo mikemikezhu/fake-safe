@@ -1,60 +1,11 @@
+from abstract_models import AbstractModelCreator
 import numpy as np
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Flatten, LeakyReLU, BatchNormalization, Reshape
-from abc import ABC, abstractmethod
+from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.layers import add, BatchNormalization, Dense, Embedding, Flatten, GlobalMaxPool1D, Input, LeakyReLU, GRU, Lambda, Reshape
 
 import tensorflow as tf
 print('Tensorflow version: {}'.format(tf.__version__))
-
-
-"""
-Abstract Model Creator
-"""
-
-
-class AbstractModelCreator(ABC):
-
-    @abstractmethod
-    def create_model(self):
-        raise NotImplementedError('Abstract class shall not be implemented')
-
-
-"""
-Generator Model Creator
-"""
-
-
-class GeneratorModelCreator(AbstractModelCreator):
-
-    def __init__(self, input_shape):
-        self.input_shape = input_shape
-
-    def create_model(self):
-
-        model = Sequential()
-
-        model.add(Flatten(input_shape=self.input_shape))
-
-        model.add(Dense(256))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(BatchNormalization(momentum=0.8))
-
-        model.add(Dense(512))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(BatchNormalization(momentum=0.8))
-
-        model.add(Dense(1024))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(BatchNormalization(momentum=0.8))
-
-        model.add(Dense(np.prod(self.input_shape), activation='tanh'))
-        model.add(Reshape(self.input_shape))
-
-        print('Generator model:')
-        model.summary()
-
-        return model
 
 
 """
@@ -117,6 +68,42 @@ class EncoderGanModelCreator(AbstractModelCreator):
         model = Sequential()
 
         model.add(self.encoder_generator)
+        model.add(self.encoder_discriminator)
+
+        optimizer = Adam(0.0002, 0.5)
+        model.compile(loss='mse',
+                      optimizer=optimizer,
+                      metrics=['accuracy'])
+
+        print('Encoder GAN model:')
+        model.summary()
+
+        return model
+
+
+class TextEncoderGanModelCreator(AbstractModelCreator):
+
+    def __init__(self,
+                 text_encoder_generator,
+                 state_encoder_generator,
+                 encoder_discriminator):
+        self.text_encoder_generator = text_encoder_generator
+        self.state_encoder_generator = state_encoder_generator
+        self.encoder_discriminator = encoder_discriminator
+
+    def create_model(self):
+
+        # 1) Set generator to trainable
+        self.text_encoder_generator.trainable = True
+        self.state_encoder_generator.trainable = True
+        # 2) Set discriminator to non-trainable
+        self.encoder_discriminator.trainable = False
+
+        # Create logical model to combine encoder generator and encoder discriminator
+        model = Sequential()
+
+        model.add(self.text_encoder_generator)
+        model.add(self.state_encoder_generator)
         model.add(self.encoder_discriminator)
 
         optimizer = Adam(0.0002, 0.5)

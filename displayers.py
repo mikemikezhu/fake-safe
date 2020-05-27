@@ -37,3 +37,20 @@ class SampleImageDisplayer(AbstractSampleDisplayer):
         if should_save_to_file:
             fig.savefig('output/{}.png'.format(name))
             plt.close()
+
+
+class SampleTextDisplayer(AbstractSampleDisplayer):
+
+    def display_samples(self, name, samples,
+                        should_display_directly,
+                        should_save_to_file):
+
+        # Display text samples
+        if should_display_directly:
+            print('\n'.join(samples))
+
+        if should_save_to_file:
+            output_path = 'output/{}.txt'.format(name)
+            with open(output_path, 'w') as data_file:
+                for sample in samples:
+                    data_file.write(sample + '\n')
