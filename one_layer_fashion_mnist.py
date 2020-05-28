@@ -8,9 +8,12 @@ from gan_models import EncoderGanModelCreator, DecoderGanModelCreator
 from trainers import EncoderTrainer, DecoderTrainer
 from displayers import SampleImageDisplayer
 
+from numpy import ones
+from numpy import zeros
 import numpy as np
 import constants
 
+import matplotlib.pyplot as plt
 import sys
 
 """
@@ -112,6 +115,18 @@ Start training
 image_displayer = SampleImageDisplayer(row=constants.DISPLAY_ROW,
                                        column=constants.DISPLAY_COLUMN)
 
+encoder_discriminator_loss = []
+encoder_discriminator_accuracy = []
+
+encoder_generator_loss = []
+encoder_generator_accuracy = []
+
+decoder_loss = []
+decoder_accuracy = []
+
+y_zeros = zeros((constants.DISPLAY_ROW * constants.DISPLAY_COLUMN, 1))
+y_ones = ones((constants.DISPLAY_ROW * constants.DISPLAY_COLUMN, 1))
+
 for current_round in range(constants.TOTAL_TRAINING_ROUND):
 
     print('************************')
@@ -128,6 +143,11 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
                                        fashion_image_test.shape[0],
                                        constants.DISPLAY_ROW * constants.DISPLAY_COLUMN)
     sample_images = fashion_image_test[sample_indexes]
+
+    mnist_image_indexes = np.random.randint(0,
+                                            mnist_image_test_scaled.shape[0],
+                                            constants.DISPLAY_ROW * constants.DISPLAY_COLUMN)
+    sample_mnist_image = mnist_image_test_scaled[mnist_image_indexes]
 
     # Display original images
     original_name = 'Original - {}'.format(current_round + 1)
@@ -161,3 +181,55 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
                                     samples=decoded_sample_images,
                                     should_display_directly=should_display_directly,
                                     should_save_to_file=should_save_to_file)
+
+    # Evaluate
+    loss_fake, acc_fake = encoder_discriminator.evaluate(encoded_sample_images_scaled,
+                                                         y_zeros)
+    loss_real, acc_real = encoder_discriminator.evaluate(sample_mnist_image,
+                                                         y_ones)
+    d_loss, d_acc = 0.5 * \
+        np.add(loss_fake, loss_real), 0.5 * np.add(acc_fake, acc_real)
+
+    encoder_discriminator_loss.append(d_loss)
+    encoder_discriminator_accuracy.append(d_acc)
+
+    g_loss, g_acc = encoder_gan.evaluate(sample_images_scaled, y_ones)
+
+    encoder_generator_loss.append(g_loss)
+    encoder_generator_accuracy.append(g_acc)
+
+    loss, accuracy = decoder_gan.evaluate(
+        sample_images_scaled, sample_images_scaled)
+
+    decoder_loss.append(loss)
+    decoder_accuracy.append(accuracy)
+
+plt.title('Encoder Discriminator Loss')
+plt.plot(encoder_discriminator_loss)
+plt.savefig('output/encoder_discriminator_loss.png')
+plt.close()
+
+plt.title('Encoder Discriminator Accuracy')
+plt.plot(encoder_discriminator_accuracy)
+plt.savefig('output/encoder_discriminator_accuracy.png')
+plt.close()
+
+plt.title('Encoder Generator Loss')
+plt.plot(encoder_generator_loss)
+plt.savefig('output/encoder_generator_loss.png')
+plt.close()
+
+plt.title('Encoder Generator Accuracy')
+plt.plot(encoder_generator_accuracy)
+plt.savefig('output/encoder_generator_accuracy.png')
+plt.close()
+
+plt.title('Decoder Loss')
+plt.plot(decoder_loss)
+plt.savefig('output/decoder_loss.png')
+plt.close()
+
+plt.title('Decoder Accuracy')
+plt.plot(decoder_accuracy)
+plt.savefig('output/decoder_accuracy.png')
+plt.close()
