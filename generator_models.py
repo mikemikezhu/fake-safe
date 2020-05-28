@@ -100,17 +100,20 @@ class TextDecoderGeneratorModelCreator(AbstractModelCreator):
         model = Sequential()
         model.add(Flatten(input_shape=self.input_shape))
 
-        model.add(Dense(256, activation='relu'))
+        model.add(Dense(128))
+        model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.2))
 
-        model.add(Dense(512, activation='relu'))
+        model.add(Dense(256))
+        model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.2))
 
-        model.add(Dense(1024, activation='relu'))
+        model.add(Dense(512))
+        model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.2))
 
-        model.add(Dense(512, activation='relu'))
-        model.add(Dropout(0.2))
+        model.add(Dense(1024))
+        model.add(LeakyReLU(alpha=0.2))
 
         model.add(Dense(self.vocabulary_size,
                         activation='softmax'))
