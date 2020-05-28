@@ -15,10 +15,13 @@ from displayers import SampleTextDisplayer, SampleImageDisplayer
 
 from imblearn.over_sampling import RandomOverSampler
 
+from numpy import ones
+from numpy import zeros
 import numpy as np
 import re
 import constants
 
+import matplotlib.pyplot as plt
 import sys
 
 """
@@ -168,6 +171,18 @@ text_displayer = SampleTextDisplayer()
 image_displayer = SampleImageDisplayer(row=constants.DISPLAY_ROW,
                                        column=constants.DISPLAY_COLUMN)
 
+encoder_discriminator_loss = []
+encoder_discriminator_accuracy = []
+
+encoder_generator_loss = []
+encoder_generator_accuracy = []
+
+decoder_loss = []
+decoder_accuracy = []
+
+y_zeros = zeros((constants.DISPLAY_ROW * constants.DISPLAY_COLUMN, 1))
+y_ones = ones((constants.DISPLAY_ROW * constants.DISPLAY_COLUMN, 1))
+
 for current_round in range(constants.TOTAL_TRAINING_ROUND):
 
     print('************************')
@@ -196,6 +211,12 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
         if word:
             sample_words.append(word)
 
+    # Select a random batch of images
+    image_indexes = np.random.randint(0,
+                                      fashion_image_train_scaled.shape[0],
+                                      constants.DISPLAY_ROW * constants.DISPLAY_COLUMN)
+    sample_images = fashion_image_train_scaled[image_indexes]
+
     # Display original corpus
     original_name = '{} - 1 - Original'.format(current_round + 1)
     text_displayer.display_samples(name=original_name,
@@ -205,6 +226,22 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
 
     # Encode images
     encoded_sample_images_scaled = text_encoder.predict(sample_tokens)
+
+    # Evaluate
+    loss_fake, acc_fake = encoder_discriminator.evaluate(encoded_sample_images_scaled,
+                                                         y_zeros)
+    loss_real, acc_real = encoder_discriminator.evaluate(sample_images,
+                                                         y_ones)
+    d_loss, d_acc = 0.5 * \
+        np.add(loss_fake, loss_real), 0.5 * np.add(acc_fake, acc_real)
+
+    encoder_discriminator_loss.append(d_loss)
+    encoder_discriminator_accuracy.append(d_acc)
+
+    g_loss, g_acc = encoder_gan.evaluate(sample_tokens, y_ones)
+
+    encoder_generator_loss.append(g_loss)
+    encoder_generator_accuracy.append(g_acc)
 
     # Display encoded images
     encoded_name = '{} - 2 - Encoded'.format(current_round + 1)
@@ -217,6 +254,9 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
 
     # Decode images to text
     loss, accuracy = decoder_gan.evaluate(sample_tokens, sample_tokens)
+    decoder_loss.append(loss)
+    decoder_accuracy.append(accuracy)
+
     print('Decode loss: {}, accuracy: {}'.format(loss, accuracy))
     tokens_probs = decoder_gan.predict(sample_tokens)
     decoded_words = []
@@ -234,3 +274,35 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
                                    samples=decoded_words,
                                    should_display_directly=should_display_directly,
                                    should_save_to_file=should_save_to_file)
+
+plt.title('Encoder Discriminator Loss')
+plt.plot(encoder_discriminator_loss)
+plt.savefig('output/encoder_discriminator_loss.png')
+plt.close()
+
+plt.title('Encoder Discriminator Accuracy')
+plt.plot(encoder_discriminator_accuracy)
+plt.savefig('output/encoder_discriminator_accuracy.png')
+plt.close()
+
+plt.title('Encoder Generator Loss')
+plt.plot(encoder_generator_loss)
+plt.savefig('output/encoder_generator_loss.png')
+plt.close()
+
+plt.title('Encoder Generator Accuracy')
+plt.plot(encoder_generator_accuracy)
+plt.savefig('output/encoder_generator_accuracy.png')
+plt.close()
+
+plt.title('Decoder Loss')
+plt.plot(decoder_loss)
+plt.savefig('output/decoder_loss.png')
+plt.close()
+
+plt.title('Decoder Accuracy')
+plt.plot(decoder_accuracy)
+plt.savefig('output/decoder_accuracy.png')
+plt.close()
+
+print('Best accuracy: {}'.format(max(decoder_accuracy)))
