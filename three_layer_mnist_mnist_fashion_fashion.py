@@ -8,9 +8,12 @@ from gan_models import EncoderGanModelCreator, DecoderGanModelCreator
 from trainers import EncoderTrainer, DecoderTrainer
 from displayers import SampleImageDisplayer
 
+from numpy import ones
+from numpy import zeros
 import numpy as np
 import constants
 
+import matplotlib.pyplot as plt
 import sys
 
 """
@@ -217,6 +220,36 @@ Start training
 image_displayer = SampleImageDisplayer(row=constants.DISPLAY_ROW,
                                        column=constants.DISPLAY_COLUMN)
 
+encoder_discriminator_loss_outer = []
+encoder_discriminator_accuracy_outer = []
+
+encoder_discriminator_loss_mid = []
+encoder_discriminator_accuracy_mid = []
+
+encoder_discriminator_loss_inner = []
+encoder_discriminator_accuracy_inner = []
+
+encoder_generator_loss_outer = []
+encoder_generator_accuracy_outer = []
+
+encoder_generator_loss_mid = []
+encoder_generator_accuracy_mid = []
+
+encoder_generator_loss_inner = []
+encoder_generator_accuracy_inner = []
+
+decoder_loss_outer = []
+decoder_accuracy_outer = []
+
+decoder_loss_mid = []
+decoder_accuracy_mid = []
+
+decoder_loss_inner = []
+decoder_accuracy_inner = []
+
+y_zeros = zeros((constants.DISPLAY_ROW * constants.DISPLAY_COLUMN, 1))
+y_ones = ones((constants.DISPLAY_ROW * constants.DISPLAY_COLUMN, 1))
+
 for current_round in range(constants.TOTAL_TRAINING_ROUND):
 
     print('************************')
@@ -237,6 +270,11 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
                                          mnist_image_test.shape[0],
                                          constants.DISPLAY_ROW * constants.DISPLAY_COLUMN)
     original_images = mnist_image_test[original_indexes]
+
+    fashion_indexes = np.random.randint(0,
+                                        fashion_image_test_scaled.shape[0],
+                                        constants.DISPLAY_ROW * constants.DISPLAY_COLUMN)
+    fashion_images = fashion_image_test_scaled[fashion_indexes]
 
     # Display original images
     original_name = '{} - 1 - Original'.format(current_round + 1)
@@ -261,6 +299,24 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
                                     should_display_directly=should_display_directly,
                                     should_save_to_file=should_save_to_file)
 
+    # Evaluate
+    loss_fake_outer, acc_fake_outer = outer_encoder_discriminator.evaluate(outer_encoded_images_scaled,
+                                                                           y_zeros)
+    loss_real_outer, acc_real_outer = outer_encoder_discriminator.evaluate(original_images_scaled,
+                                                                           y_ones)
+    d_loss_outer, d_acc_outer = 0.5 * \
+        np.add(loss_fake_outer, loss_real_outer), 0.5 * \
+        np.add(acc_fake_outer, acc_real_outer)
+
+    encoder_discriminator_loss_outer.append(d_loss_outer)
+    encoder_discriminator_accuracy_outer.append(d_acc_outer)
+
+    g_loss_outer, g_acc_outer = outer_encoder_gan.evaluate(original_images_scaled,
+                                                           y_ones)
+
+    encoder_generator_loss_outer.append(g_loss_outer)
+    encoder_generator_accuracy_outer.append(g_acc_outer)
+
     """ Encoder - Middle layer """
 
     # Encode images
@@ -275,6 +331,24 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
                                     samples=mid_encoded_images,
                                     should_display_directly=should_display_directly,
                                     should_save_to_file=should_save_to_file)
+
+    # Evaluate
+    loss_fake_mid, acc_fake_mid = mid_encoder_discriminator.evaluate(mid_encoded_images_scaled,
+                                                                     y_zeros)
+    loss_real_mid, acc_real_mid = mid_encoder_discriminator.evaluate(fashion_images,
+                                                                     y_ones)
+    d_loss_mid, d_acc_mid = 0.5 * \
+        np.add(loss_fake_mid, loss_real_mid), 0.5 * \
+        np.add(acc_fake_mid, acc_real_mid)
+
+    encoder_discriminator_loss_mid.append(d_loss_mid)
+    encoder_discriminator_accuracy_mid.append(d_acc_mid)
+
+    g_loss_mid, g_acc_mid = mid_encoder_gan.evaluate(original_images_scaled,
+                                                     y_ones)
+
+    encoder_generator_loss_mid.append(g_loss_mid)
+    encoder_generator_accuracy_mid.append(g_acc_mid)
 
     """ Encoder - Inner layer """
 
@@ -291,6 +365,24 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
                                     should_display_directly=should_display_directly,
                                     should_save_to_file=should_save_to_file)
 
+    # Evaluate
+    loss_fake_inner, acc_fake_inner = inner_encoder_discriminator.evaluate(inner_encoded_images_scaled,
+                                                                           y_zeros)
+    loss_real_inner, acc_real_inner = inner_encoder_discriminator.evaluate(fashion_images,
+                                                                           y_ones)
+    d_loss_inner, d_acc_inner = 0.5 * \
+        np.add(loss_fake_inner, loss_real_inner), 0.5 * \
+        np.add(acc_fake_inner, acc_real_inner)
+
+    encoder_discriminator_loss_inner.append(d_loss_inner)
+    encoder_discriminator_accuracy_inner.append(d_acc_inner)
+
+    g_loss_inner, g_acc_inner = inner_encoder_gan.evaluate(fashion_images,
+                                                           y_ones)
+
+    encoder_generator_loss_inner.append(g_loss_inner)
+    encoder_generator_accuracy_inner.append(g_acc_inner)
+
     """ Decoder - Inner layer """
 
     # Decode images
@@ -306,6 +398,13 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
                                     should_display_directly=should_display_directly,
                                     should_save_to_file=should_save_to_file)
 
+    # Evaluate
+    loss_inner, accuracy_inner = inner_decoder_gan.evaluate(fashion_images,
+                                                            fashion_images)
+
+    decoder_loss_inner.append(loss_inner)
+    decoder_accuracy_inner.append(accuracy_inner)
+
     """ Decoder - Middle layer """
 
     # Decode images
@@ -320,6 +419,12 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
                                     samples=mid_decoded_images,
                                     should_display_directly=should_display_directly,
                                     should_save_to_file=should_save_to_file)
+    # Evaluate
+    loss_mid, accuracy_mid = mid_decoder_gan.evaluate(original_images_scaled,
+                                                      original_images_scaled)
+
+    decoder_loss_mid.append(loss_mid)
+    decoder_accuracy_mid.append(accuracy_mid)
 
     """ Decoder - Outer layer """
 
@@ -335,3 +440,100 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
                                     samples=outer_decoded_images,
                                     should_display_directly=should_display_directly,
                                     should_save_to_file=should_save_to_file)
+
+    # Evaluate
+    loss_outer, accuracy_outer = outer_decoder_gan.evaluate(original_images_scaled,
+                                                            original_images_scaled)
+
+    decoder_loss_outer.append(loss_outer)
+    decoder_accuracy_outer.append(accuracy_outer)
+
+plt.title('Outer Encoder Discriminator Loss')
+plt.plot(encoder_discriminator_loss_outer)
+plt.savefig('output/encoder_discriminator_loss_outer.png')
+plt.close()
+
+plt.title('Outer Encoder Discriminator Accuracy')
+plt.plot(encoder_discriminator_accuracy_outer)
+plt.savefig('output/encoder_discriminator_accuracy_outer.png')
+plt.close()
+
+plt.title('Middle Encoder Discriminator Loss')
+plt.plot(encoder_discriminator_loss_mid)
+plt.savefig('output/encoder_discriminator_loss_mid.png')
+plt.close()
+
+plt.title('Middle Encoder Discriminator Accuracy')
+plt.plot(encoder_discriminator_accuracy_mid)
+plt.savefig('output/encoder_discriminator_accuracy_mid.png')
+plt.close()
+
+plt.title('Inner Encoder Discriminator Loss')
+plt.plot(encoder_discriminator_loss_inner)
+plt.savefig('output/encoder_discriminator_loss_inner.png')
+plt.close()
+
+plt.title('Inner Encoder Discriminator Accuracy')
+plt.plot(encoder_discriminator_accuracy_inner)
+plt.savefig('output/encoder_discriminator_accuracy_inner.png')
+plt.close()
+
+plt.title('Outer Encoder Generator Loss')
+plt.plot(encoder_generator_loss_outer)
+plt.savefig('output/encoder_generator_loss_outer.png')
+plt.close()
+
+plt.title('Outer Encoder Generator Accuracy')
+plt.plot(encoder_generator_accuracy_outer)
+plt.savefig('output/encoder_generator_accuracy_outer.png')
+plt.close()
+
+plt.title('Middle Encoder Generator Loss')
+plt.plot(encoder_generator_loss_mid)
+plt.savefig('output/encoder_generator_loss_mid.png')
+plt.close()
+
+plt.title('Middle Encoder Generator Accuracy')
+plt.plot(encoder_generator_accuracy_mid)
+plt.savefig('output/encoder_generator_accuracy_mid.png')
+plt.close()
+
+plt.title('Inner Encoder Generator Loss')
+plt.plot(encoder_generator_loss_inner)
+plt.savefig('output/encoder_generator_loss_inner.png')
+plt.close()
+
+plt.title('Inner Encoder Generator Accuracy')
+plt.plot(encoder_generator_accuracy_inner)
+plt.savefig('output/encoder_generator_accuracy_inner.png')
+plt.close()
+
+plt.title('Outer Decoder Loss')
+plt.plot(decoder_loss_outer)
+plt.savefig('output/decoder_loss_outer.png')
+plt.close()
+
+plt.title('Outer Decoder Accuracy')
+plt.plot(decoder_accuracy_outer)
+plt.savefig('output/decoder_accuracy_outer.png')
+plt.close()
+
+plt.title('Middle Decoder Loss')
+plt.plot(decoder_loss_mid)
+plt.savefig('output/decoder_loss_mid.png')
+plt.close()
+
+plt.title('Middle Decoder Accuracy')
+plt.plot(decoder_accuracy_mid)
+plt.savefig('output/decoder_accuracy_mid.png')
+plt.close()
+
+plt.title('Inner Decoder Loss')
+plt.plot(decoder_loss_inner)
+plt.savefig('output/decoder_loss_inner.png')
+plt.close()
+
+plt.title('Inner Decoder Accuracy')
+plt.plot(decoder_accuracy_inner)
+plt.savefig('output/decoder_accuracy_inner.png')
+plt.close()
