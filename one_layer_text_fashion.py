@@ -13,6 +13,8 @@ from trainers import EncoderTrainer, DecoderTrainer
 from tokenizer import DefaultTokenizer
 from displayers import SampleTextDisplayer, SampleImageDisplayer
 
+from imblearn.over_sampling import RandomOverSampler
+
 import numpy as np
 import re
 import constants
@@ -49,7 +51,6 @@ Load data
 with open(constants.TEXT_2_IMAGE_DATASET_PATH, 'r') as data_file:
     lines = data_file.read().split('\n')
 
-corpus = []
 words = []
 for line in lines:
     line = line.strip()  # Remove "\n" and empty space
@@ -57,15 +58,37 @@ for line in lines:
     line = re.sub('[^a-z ]+', '', line)  # Remove non-alphabet characters
     line = re.sub(' +', ' ', line)  # Remove extra empty space
     words += [word for word in line.split(' ') if word]
-    corpus.append(line)
+
+# Since the dataset does not have enough corpus to train the model
+# We only select some of the most frequent words to demonstrate out idea
+words_dict = {}
+for word in words:
+    count = words_dict.get(word)
+    if not count:
+        count = 0
+    count += 1
+    words_dict[word] = count
+
+sorted_words_tuple = sorted(
+    words_dict.items(), key=lambda x: x[1], reverse=True)
+sorted_words_tuple = sorted_words_tuple[:100]
+sorted_words = [tuple[0] for tuple in sorted_words_tuple]
+
+words = [word for word in words if word in sorted_words]
 
 # Tokenize text data
 tokenizer = DefaultTokenizer()
-sequences, max_sequence_length, word_index, index_word, vocabulary_size = tokenizer.tokenize_corpus(
-    corpus)
+_, _, word_index, index_word, vocabulary_size = tokenizer.tokenize_corpus(
+    words)
 
 tokens = [word_index[word] for word in words]
 tokens = np.asarray(tokens)
+
+# Over sampling the minority data
+oversample = RandomOverSampler(sampling_strategy='minority')
+tokens = tokens.reshape(-1, 1)
+tokens, tokens = oversample.fit_resample(tokens, tokens)
+
 tokens_train, tokens_test = train_test_split(tokens,
                                              test_size=0.15)
 print('Tokens train shape: {}'.format(tokens_train.shape))

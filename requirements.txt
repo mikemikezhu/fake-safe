@@ -5,3 +5,4 @@ pylint
 autopep8
 tensorflow
 matplotlib
+imbalanced-learn
