@@ -136,18 +136,36 @@ class DecoderTrainer(AbstractModelTrainer):
     def train(self, input_data, exp_output_data):
 
         print('========== Start decoder training ==========')
+
+        for current_epoch in range(self.training_epochs):
+
+            # Select a random batch of data
+            input_indexes = np.random.randint(0,
+                                              self.input_data.shape[0],
+                                              self.batch_size)
+            x_input = self.input_data[input_indexes]
+
+            # ---------------------
+            #  Train decoder generator
+            # ---------------------
+            loss, accuracy = self.__train_decoder_generator(x_input)
+
+            # Plot the progress
+            print('[Decoder] - epochs: {}, loss: {}, accuracy: {}'.format(
+                (current_epoch + 1), loss, accuracy))
+
+    # TODO: Deprecated
+    def train_model(self):
+        self.train(self.input_data, None)
+
+    def __train_decoder_generator(self, x_input):
+
         # Train decoder generator via GAN model
         # Decoder GAN model has 2 layers: (1) encoder generator -> (2) decoder generator
         # The input data will be first encoded via encoder generator
         # Then, it will be further decoded via decoder generator
         # We should train the decoder generator to output data same as input data
-        output_data = input_data
-        self.decoder_gan.fit(input_data,
-                             output_data,
-                             verbose=2,
-                             epochs=self.training_epochs,
-                             batch_size=self.batch_size)
+        x_output = x_input
+        loss, accuracy = self.decoder_gan.train_on_batch(x_input, x_output)
+        return loss, accuracy
 
-    # TODO: Deprecated
-    def train_model(self):
-        self.train(self.input_data, None)
