@@ -112,6 +112,7 @@ Create models
 
 # text -> image
 text_encoder_creator = TextEncoderGeneratorModelCreator(constants.INPUT_SHAPE,
+                                                        constants.OUTPUT_SHAPE,
                                                         vocabulary_size)
 text_encoder = text_encoder_creator.create_model()
 

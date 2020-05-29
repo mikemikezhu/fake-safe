@@ -74,7 +74,8 @@ Create models
 # Encoder
 
 # Create encoder generator
-encoder_generator_creator = ImageGeneratorModelCreator(constants.INPUT_SHAPE)
+encoder_generator_creator = ImageGeneratorModelCreator(constants.INPUT_SHAPE,
+                                                       constants.OUTPUT_SHAPE)
 encoder_generator = encoder_generator_creator.create_model()
 
 # Create encoder discriminator
@@ -90,7 +91,8 @@ encoder_gan = encoder_gan_creator.create_model()
 # Decoder
 
 # Create decoder generator
-decoder_generator_creator = ImageGeneratorModelCreator(constants.INPUT_SHAPE)
+decoder_generator_creator = ImageGeneratorModelCreator(constants.INPUT_SHAPE,
+                                                       constants.OUTPUT_SHAPE)
 decoder_generator = decoder_generator_creator.create_model()
 
 # Create GAN model to combine encoder generator and decoder generator
