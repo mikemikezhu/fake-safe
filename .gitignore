@@ -552,3 +552,6 @@ venv
 
 # Training output folder
 output
+
+# Data folder
+data
