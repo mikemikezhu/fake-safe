@@ -6,3 +6,4 @@ autopep8
 tensorflow
 matplotlib
 imbalanced-learn
+Pillow
