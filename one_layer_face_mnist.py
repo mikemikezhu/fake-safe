@@ -17,7 +17,6 @@ import matplotlib.pyplot as plt
 import sys
 import os
 from PIL import Image
-from zipfile import ZipFile
 
 """
 One layer encoding-decoding:
