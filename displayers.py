@@ -13,9 +13,10 @@ class AbstractSampleDisplayer(ABC):
 
 class SampleImageDisplayer(AbstractSampleDisplayer):
 
-    def __init__(self, row=1, column=1):
+    def __init__(self, row=1, column=1, cmap=None):
         self.row = row
         self.column = column
+        self.cmap = cmap
 
     def display_samples(self, name, samples,
                         should_display_directly,
@@ -27,7 +28,7 @@ class SampleImageDisplayer(AbstractSampleDisplayer):
         count = 0
         for i in range(self.row):
             for j in range(self.column):
-                axs[i, j].imshow(samples[count], cmap='gray')
+                axs[i, j].imshow(samples[count], cmap=self.cmap)
                 axs[i, j].axis('off')
                 count += 1
 

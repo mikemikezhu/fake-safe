@@ -170,7 +170,8 @@ Start training
 
 text_displayer = SampleTextDisplayer()
 image_displayer = SampleImageDisplayer(row=constants.DISPLAY_ROW,
-                                       column=constants.DISPLAY_COLUMN)
+                                       column=constants.DISPLAY_COLUMN,
+                                       cmap='gray')
 
 encoder_discriminator_loss = []
 encoder_discriminator_accuracy = []
