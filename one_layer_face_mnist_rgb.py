@@ -133,7 +133,7 @@ image_displayer_gray = SampleImageDisplayer(row=constants.DISPLAY_ROW,
                                             cmap='gray')
 
 image_displayer_rgb = SampleImageDisplayer(row=constants.DISPLAY_ROW,
-                                           column=constants.DISPLAY_COLUMN,)
+                                           column=constants.DISPLAY_COLUMN)
 
 encoder_discriminator_loss = []
 encoder_discriminator_accuracy = []
