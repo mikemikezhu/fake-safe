@@ -7,7 +7,7 @@ from discriminator_models import DiscriminatorModelCreator
 from gan_models import EncoderGanModelCreator, DecoderGanModelCreator
 
 from trainers import EncoderTrainer, DecoderTrainer
-from displayers import SampleImageDisplayer
+from displayers import SampleImageDisplayer, SampleDiagramDisplayer
 
 from numpy import ones
 from numpy import zeros
@@ -240,6 +240,8 @@ image_displayer_gray = SampleImageDisplayer(row=constants.DISPLAY_ROW,
 
 image_displayer_rgb = SampleImageDisplayer(row=constants.DISPLAY_ROW,
                                            column=constants.DISPLAY_COLUMN)
+
+diagram_displayer = SampleDiagramDisplayer()
 
 encoder_discriminator_loss_outer = []
 encoder_discriminator_accuracy_outer = []
@@ -474,92 +476,92 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
     decoder_loss_outer.append(loss_outer)
     decoder_accuracy_outer.append(accuracy_outer)
 
-plt.title('Outer Encoder Discriminator Loss')
-plt.plot(encoder_discriminator_loss_outer)
-plt.savefig('output/encoder_discriminator_loss_outer.png')
-plt.close()
+diagram_displayer.display_samples(name='Outer Encoder Discriminator Loss',
+                                  samples=encoder_discriminator_loss_outer,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
 
-plt.title('Outer Encoder Discriminator Accuracy')
-plt.plot(encoder_discriminator_accuracy_outer)
-plt.savefig('output/encoder_discriminator_accuracy_outer.png')
-plt.close()
+diagram_displayer.display_samples(name='Outer Encoder Discriminator Accuracy',
+                                  samples=encoder_discriminator_accuracy_outer,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
 
-plt.title('Middle Encoder Discriminator Loss')
-plt.plot(encoder_discriminator_loss_mid)
-plt.savefig('output/encoder_discriminator_loss_mid.png')
-plt.close()
+diagram_displayer.display_samples(name='Middle Encoder Discriminator Loss',
+                                  samples=encoder_discriminator_loss_mid,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
 
-plt.title('Middle Encoder Discriminator Accuracy')
-plt.plot(encoder_discriminator_accuracy_mid)
-plt.savefig('output/encoder_discriminator_accuracy_mid.png')
-plt.close()
+diagram_displayer.display_samples(name='Middle Encoder Discriminator Accuracy',
+                                  samples=encoder_discriminator_accuracy_mid,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
 
-plt.title('Inner Encoder Discriminator Loss')
-plt.plot(encoder_discriminator_loss_inner)
-plt.savefig('output/encoder_discriminator_loss_inner.png')
-plt.close()
+diagram_displayer.display_samples(name='Inner Encoder Discriminator Loss',
+                                  samples=encoder_discriminator_loss_inner,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
 
-plt.title('Inner Encoder Discriminator Accuracy')
-plt.plot(encoder_discriminator_accuracy_inner)
-plt.savefig('output/encoder_discriminator_accuracy_inner.png')
-plt.close()
+diagram_displayer.display_samples(name='Inner Encoder Discriminator Accuracy',
+                                  samples=encoder_discriminator_accuracy_inner,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
 
-plt.title('Outer Encoder Generator Loss')
-plt.plot(encoder_generator_loss_outer)
-plt.savefig('output/encoder_generator_loss_outer.png')
-plt.close()
+diagram_displayer.display_samples(name='Outer Encoder Generator Loss',
+                                  samples=encoder_generator_loss_outer,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
 
-plt.title('Outer Encoder Generator Accuracy')
-plt.plot(encoder_generator_accuracy_outer)
-plt.savefig('output/encoder_generator_accuracy_outer.png')
-plt.close()
+diagram_displayer.display_samples(name='Outer Encoder Generator Accuracy',
+                                  samples=encoder_generator_accuracy_outer,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
 
-plt.title('Middle Encoder Generator Loss')
-plt.plot(encoder_generator_loss_mid)
-plt.savefig('output/encoder_generator_loss_mid.png')
-plt.close()
+diagram_displayer.display_samples(name='Middle Encoder Generator Loss',
+                                  samples=encoder_generator_loss_mid,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
 
-plt.title('Middle Encoder Generator Accuracy')
-plt.plot(encoder_generator_accuracy_mid)
-plt.savefig('output/encoder_generator_accuracy_mid.png')
-plt.close()
+diagram_displayer.display_samples(name='Middle Encoder Generator Accuracy',
+                                  samples=encoder_generator_accuracy_mid,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
 
-plt.title('Inner Encoder Generator Loss')
-plt.plot(encoder_generator_loss_inner)
-plt.savefig('output/encoder_generator_loss_inner.png')
-plt.close()
+diagram_displayer.display_samples(name='Inner Encoder Generator Loss',
+                                  samples=encoder_generator_loss_inner,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
 
-plt.title('Inner Encoder Generator Accuracy')
-plt.plot(encoder_generator_accuracy_inner)
-plt.savefig('output/encoder_generator_accuracy_inner.png')
-plt.close()
+diagram_displayer.display_samples(name='Inner Encoder Generator Accuracy',
+                                  samples=encoder_generator_accuracy_inner,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
 
-plt.title('Outer Decoder Loss')
-plt.plot(decoder_loss_outer)
-plt.savefig('output/decoder_loss_outer.png')
-plt.close()
+diagram_displayer.display_samples(name='Outer Decoder Loss',
+                                  samples=decoder_loss_outer,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
 
-plt.title('Outer Decoder Accuracy')
-plt.plot(decoder_accuracy_outer)
-plt.savefig('output/decoder_accuracy_outer.png')
-plt.close()
+diagram_displayer.display_samples(name='Outer Decoder Accuracy',
+                                  samples=decoder_accuracy_outer,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
 
-plt.title('Middle Decoder Loss')
-plt.plot(decoder_loss_mid)
-plt.savefig('output/decoder_loss_mid.png')
-plt.close()
+diagram_displayer.display_samples(name='Middle Decoder Loss',
+                                  samples=decoder_loss_mid,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
 
-plt.title('Middle Decoder Accuracy')
-plt.plot(decoder_accuracy_mid)
-plt.savefig('output/decoder_accuracy_mid.png')
-plt.close()
+diagram_displayer.display_samples(name='Middle Decoder Accuracy',
+                                  samples=decoder_accuracy_mid,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
 
-plt.title('Inner Decoder Loss')
-plt.plot(decoder_loss_inner)
-plt.savefig('output/decoder_loss_inner.png')
-plt.close()
+diagram_displayer.display_samples(name='Inner Decoder Loss',
+                                  samples=decoder_loss_inner,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
 
-plt.title('Inner Decoder Accuracy')
-plt.plot(decoder_accuracy_inner)
-plt.savefig('output/decoder_accuracy_inner.png')
-plt.close()
+diagram_displayer.display_samples(name='Inner Decoder Accuracy',
+                                  samples=decoder_accuracy_inner,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)

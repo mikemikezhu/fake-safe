@@ -40,6 +40,24 @@ class SampleImageDisplayer(AbstractSampleDisplayer):
             plt.close()
 
 
+class SampleDiagramDisplayer(AbstractSampleDisplayer):
+
+    def display_samples(self, name, samples,
+                        should_display_directly,
+                        should_save_to_file):
+
+        # Display diagram samples
+        plt.title(name)
+        plt.plot(samples)
+
+        if should_display_directly:
+            plt.show()
+
+        if should_save_to_file:
+            plt.savefig('output/{}.png'.format(name))
+            plt.close()
+
+
 class SampleTextDisplayer(AbstractSampleDisplayer):
 
     def display_samples(self, name, samples,

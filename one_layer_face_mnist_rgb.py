@@ -6,7 +6,7 @@ from discriminator_models import DiscriminatorModelCreator
 from gan_models import EncoderGanModelCreator, DecoderGanModelCreator
 
 from trainers import EncoderTrainer, DecoderTrainer
-from displayers import SampleImageDisplayer
+from displayers import SampleImageDisplayer, SampleDiagramDisplayer
 
 from numpy import ones
 from numpy import zeros
@@ -135,6 +135,8 @@ image_displayer_gray = SampleImageDisplayer(row=constants.DISPLAY_ROW,
 image_displayer_rgb = SampleImageDisplayer(row=constants.DISPLAY_ROW,
                                            column=constants.DISPLAY_COLUMN)
 
+diagram_displayer = SampleDiagramDisplayer()
+
 encoder_discriminator_loss = []
 encoder_discriminator_accuracy = []
 
@@ -224,32 +226,33 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
     decoder_loss.append(loss)
     decoder_accuracy.append(accuracy)
 
-plt.title('Encoder Discriminator Loss')
-plt.plot(encoder_discriminator_loss)
-plt.savefig('output/encoder_discriminator_loss.png')
-plt.close()
 
-plt.title('Encoder Discriminator Accuracy')
-plt.plot(encoder_discriminator_accuracy)
-plt.savefig('output/encoder_discriminator_accuracy.png')
-plt.close()
+diagram_displayer.display_samples(name='Encoder Discriminator Loss',
+                                  samples=encoder_discriminator_loss,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
 
-plt.title('Encoder Generator Loss')
-plt.plot(encoder_generator_loss)
-plt.savefig('output/encoder_generator_loss.png')
-plt.close()
+diagram_displayer.display_samples(name='Encoder Discriminator Accuracy',
+                                  samples=encoder_discriminator_accuracy,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
 
-plt.title('Encoder Generator Accuracy')
-plt.plot(encoder_generator_accuracy)
-plt.savefig('output/encoder_generator_accuracy.png')
-plt.close()
+diagram_displayer.display_samples(name='Encoder Generator Loss',
+                                  samples=encoder_generator_loss,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
 
-plt.title('Decoder Loss')
-plt.plot(decoder_loss)
-plt.savefig('output/decoder_loss.png')
-plt.close()
+diagram_displayer.display_samples(name='Encoder Generator Accuracy',
+                                  samples=encoder_generator_accuracy,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
 
-plt.title('Decoder Accuracy')
-plt.plot(decoder_accuracy)
-plt.savefig('output/decoder_accuracy.png')
-plt.close()
+diagram_displayer.display_samples(name='Decoder Loss',
+                                  samples=decoder_loss,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
+
+diagram_displayer.display_samples(name='Decoder Accuracy',
+                                  samples=decoder_accuracy,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
