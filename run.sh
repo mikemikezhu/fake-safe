@@ -78,7 +78,7 @@ pwd
 # Execute python script
 cd ..
 pwd
-python3 "$script_name.py" $should_display_directly $should_save_to_file
+python3 "src/$script_name.py" $should_display_directly $should_save_to_file
 
 # Deactivate python virtual environment
 deactivate
