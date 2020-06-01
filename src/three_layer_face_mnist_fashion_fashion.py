@@ -175,9 +175,7 @@ outer_encoder_trainer = EncoderTrainer(outer_encoder_generator,
                                        outer_encoder_discriminator,
                                        outer_encoder_gan,
                                        training_epochs=constants.TRAINING_EPOCHS,
-                                       batch_size=constants.BATCH_SIZE,
-                                       input_data=face_images_train_scaled,
-                                       exp_output_data=mnist_image_train_scaled)
+                                       batch_size=constants.BATCH_SIZE)
 
 """ Encoder - Middle layer """
 
@@ -186,9 +184,7 @@ mid_encoder_trainer = EncoderTrainer(mid_encoder_generator,
                                      mid_encoder_discriminator,
                                      mid_encoder_gan,
                                      training_epochs=constants.TRAINING_EPOCHS,
-                                     batch_size=constants.BATCH_SIZE,
-                                     input_data=mnist_image_train_scaled,
-                                     exp_output_data=fashion_image_train_scaled)
+                                     batch_size=constants.BATCH_SIZE)
 
 """ Encoder - Inner layer """
 
@@ -197,9 +193,7 @@ inner_encoder_trainer = EncoderTrainer(inner_encoder_generator,
                                        inner_encoder_discriminator,
                                        inner_encoder_gan,
                                        training_epochs=constants.TRAINING_EPOCHS,
-                                       batch_size=constants.BATCH_SIZE,
-                                       input_data=fashion_image_train_scaled,
-                                       exp_output_data=fashion_image_train_scaled)
+                                       batch_size=constants.BATCH_SIZE)
 
 """ Decoder - Inner layer """
 
@@ -208,8 +202,7 @@ inner_decoder_trainer = DecoderTrainer(inner_encoder_generator,
                                        inner_decoder_generator,
                                        inner_decoder_gan,
                                        training_epochs=constants.TRAINING_EPOCHS,
-                                       batch_size=constants.BATCH_SIZE,
-                                       input_data=fashion_image_train_scaled)
+                                       batch_size=constants.BATCH_SIZE)
 
 """ Decoder - Middle layer """
 
@@ -218,8 +211,7 @@ mid_decoder_trainer = DecoderTrainer(mid_encoder_generator,
                                      mid_decoder_generator,
                                      mid_decoder_gan,
                                      training_epochs=constants.TRAINING_EPOCHS,
-                                     batch_size=constants.BATCH_SIZE,
-                                     input_data=mnist_image_train_scaled)
+                                     batch_size=constants.BATCH_SIZE)
 
 """ Decoder - Outer layer """
 
@@ -228,8 +220,7 @@ outer_decoder_trainer = DecoderTrainer(outer_encoder_generator,
                                        outer_decoder_generator,
                                        outer_decoder_gan,
                                        training_epochs=constants.TRAINING_EPOCHS,
-                                       batch_size=constants.BATCH_SIZE,
-                                       input_data=face_images_train_scaled)
+                                       batch_size=constants.BATCH_SIZE)
 
 """
 Start training
@@ -279,12 +270,15 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
 
     # Train: outer encoder -> inner encoder -> middle encoder ->
     # inner decoder -> middle decoder -> outer decoder
-    outer_encoder_trainer.train_model()
-    mid_encoder_trainer.train_model()
-    inner_encoder_trainer.train_model()
-    inner_decoder_trainer.train_model()
-    mid_decoder_trainer.train_model()
-    outer_decoder_trainer.train_model()
+    outer_encoder_trainer.train(input_data=face_images_train_scaled,
+                                exp_output_data=mnist_image_train_scaled)
+    mid_encoder_trainer.train(input_data=mnist_image_train_scaled,
+                              exp_output_data=fashion_image_train_scaled)
+    inner_encoder_trainer.train(input_data=fashion_image_train_scaled,
+                                exp_output_data=fashion_image_train_scaled)
+    inner_decoder_trainer.train(input_data=fashion_image_train_scaled)
+    mid_decoder_trainer.train(input_data=mnist_image_train_scaled)
+    outer_decoder_trainer.train(input_data=face_images_train_scaled)
 
     # Select sample of images
     original_indexes = np.random.randint(0,

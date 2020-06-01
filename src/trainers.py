@@ -14,11 +14,6 @@ Abstract Model Trainer
 class AbstractModelTrainer(ABC):
 
     @abstractmethod
-    # TODO: Deprecated
-    def train_model(self):
-        raise NotImplementedError('Abstract class shall not be implemented')
-
-    @abstractmethod
     def train(self, input_data, exp_output_data=None):
         raise NotImplementedError('Abstract class shall not be implemented')
 
@@ -35,9 +30,7 @@ class EncoderTrainer(AbstractModelTrainer):
                  encoder_discriminator,
                  encoder_gan,
                  training_epochs,
-                 batch_size,
-                 input_data,  # Input data of encoder
-                 exp_output_data):  # Expected output data of encoder
+                 batch_size):
 
         self.encoder_generator = encoder_generator
         self.encoder_discriminator = encoder_discriminator
@@ -45,9 +38,6 @@ class EncoderTrainer(AbstractModelTrainer):
 
         self.training_epochs = training_epochs
         self.batch_size = batch_size
-
-        self.input_data = input_data
-        self.exp_output_data = exp_output_data
 
         self.y_zeros = zeros((self.batch_size, 1))
         self.y_ones = ones((self.batch_size, 1))
@@ -86,10 +76,6 @@ class EncoderTrainer(AbstractModelTrainer):
             print('[Encoder] - epochs: {}, d_loss: {}, d_acc: {}, g_loss: {}, g_acc: {}'.format(
                 (current_epoch + 1), d_loss, d_acc, g_loss, g_acc))
 
-    # TODO: Deprecated
-    def train_model(self):
-        self.train(self.input_data, self.exp_output_data)
-
     def __train_encoder_discriminator(self, x_gen_output, x_exp_output):
 
         # Generated output is marked as 0
@@ -121,8 +107,7 @@ class DecoderTrainer(AbstractModelTrainer):
                  decoder_generator,
                  decoder_gan,
                  training_epochs,
-                 batch_size,
-                 input_data):  # Input data of decoder
+                 batch_size):
 
         self.encoder_generator = encoder_generator
         self.decoder_generator = decoder_generator
@@ -131,9 +116,7 @@ class DecoderTrainer(AbstractModelTrainer):
         self.training_epochs = training_epochs
         self.batch_size = batch_size
 
-        self.input_data = input_data
-
-    def train(self, input_data, exp_output_data):
+    def train(self, input_data, exp_output_data=None):
 
         print('========== Start decoder training ==========')
 
@@ -141,9 +124,9 @@ class DecoderTrainer(AbstractModelTrainer):
 
             # Select a random batch of data
             input_indexes = np.random.randint(0,
-                                              self.input_data.shape[0],
+                                              input_data.shape[0],
                                               self.batch_size)
-            x_input = self.input_data[input_indexes]
+            x_input = input_data[input_indexes]
 
             # ---------------------
             #  Train decoder generator
@@ -153,10 +136,6 @@ class DecoderTrainer(AbstractModelTrainer):
             # Plot the progress
             print('[Decoder] - epochs: {}, loss: {}, accuracy: {}'.format(
                 (current_epoch + 1), loss, accuracy))
-
-    # TODO: Deprecated
-    def train_model(self):
-        self.train(self.input_data, None)
 
     def __train_decoder_generator(self, x_input):
 
@@ -168,4 +147,3 @@ class DecoderTrainer(AbstractModelTrainer):
         x_output = x_input
         loss, accuracy = self.decoder_gan.train_on_batch(x_input, x_output)
         return loss, accuracy
-

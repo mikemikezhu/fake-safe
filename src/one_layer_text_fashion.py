@@ -150,9 +150,7 @@ encoder_trainer = EncoderTrainer(text_encoder,
                                  encoder_discriminator,
                                  encoder_gan,
                                  training_epochs=constants.TRAINING_EPOCHS,
-                                 batch_size=constants.BATCH_SIZE,
-                                 input_data=tokens_train,
-                                 exp_output_data=fashion_image_train_scaled)
+                                 batch_size=constants.BATCH_SIZE)
 
 """ Decoder """
 
@@ -161,8 +159,7 @@ decoder_trainer = DecoderTrainer(text_encoder,
                                  text_decoder,
                                  decoder_gan,
                                  training_epochs=constants.TRAINING_EPOCHS,
-                                 batch_size=constants.BATCH_SIZE,
-                                 input_data=tokens_train)
+                                 batch_size=constants.BATCH_SIZE)
 
 """
 Start training
@@ -195,10 +192,11 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
     """ Train """
 
     # text -> image
-    encoder_trainer.train_model()
+    encoder_trainer.train(input_data=tokens_train,
+                          exp_output_data=fashion_image_train_scaled)
 
     # image -> text
-    decoder_trainer.train_model()
+    decoder_trainer.train(input_data=tokens_train)
 
     """ Inference """
 

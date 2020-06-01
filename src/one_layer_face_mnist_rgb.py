@@ -110,9 +110,7 @@ encoder_trainer = EncoderTrainer(encoder_generator,
                                  encoder_discriminator,
                                  encoder_gan,
                                  training_epochs=constants.TRAINING_EPOCHS,
-                                 batch_size=constants.BATCH_SIZE,
-                                 input_data=face_images_train_scaled,
-                                 exp_output_data=mnist_image_train_scaled)
+                                 batch_size=constants.BATCH_SIZE)
 
 # Decoder
 
@@ -121,8 +119,7 @@ decoder_trainer = DecoderTrainer(encoder_generator,
                                  decoder_generator,
                                  decoder_gan,
                                  training_epochs=constants.TRAINING_EPOCHS,
-                                 batch_size=constants.BATCH_SIZE,
-                                 input_data=face_images_train_scaled)
+                                 batch_size=constants.BATCH_SIZE)
 
 """
 Start training
@@ -156,9 +153,10 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
     print('************************')
 
     # Train encoder
-    encoder_trainer.train_model()
+    encoder_trainer.train(input_data=face_images_train_scaled,
+                          exp_output_data=mnist_image_train_scaled)
     # Train decoder
-    decoder_trainer.train_model()
+    decoder_trainer.train(input_data=face_images_train_scaled)
 
     # Select sample of images
     sample_indexes = np.random.randint(0,
