@@ -1,5 +1,4 @@
 from tensorflow.keras.datasets import fashion_mnist
-from tensorflow.keras.preprocessing.sequence import pad_sequences
 from sklearn.model_selection import train_test_split
 
 from generator_models import TextEncoderGeneratorModelCreator
@@ -21,7 +20,6 @@ import numpy as np
 import re
 import constants
 
-import matplotlib.pyplot as plt
 import sys
 
 """

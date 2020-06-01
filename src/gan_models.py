@@ -1,6 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras.layers import add, BatchNormalization, Dense, Embedding, Flatten, GlobalMaxPool1D, Input, LeakyReLU, GRU, Lambda, Reshape
-from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.models import Sequential
 from tensorflow.keras.optimizers import Adam
 import numpy as np
 from abstract_models import AbstractModelCreator

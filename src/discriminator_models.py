@@ -1,8 +1,8 @@
 from abstract_models import AbstractModelCreator
 import numpy as np
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.models import Sequential, Model
-from tensorflow.keras.layers import add, BatchNormalization, Dense, Embedding, Flatten, GlobalMaxPool1D, Input, LeakyReLU, GRU, Lambda, Reshape
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Flatten, LeakyReLU
 
 import tensorflow as tf
 print('Tensorflow version: {}'.format(tf.__version__))
