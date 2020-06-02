@@ -2,6 +2,8 @@ from numpy import ones
 from numpy import zeros
 import numpy as np
 
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
+
 from abc import ABC, abstractmethod
 
 """
@@ -12,7 +14,11 @@ Abstract Model Trainer
 class AbstractModelTrainer(ABC):
 
     @abstractmethod
-    def train(self, input_data, exp_output_data=None):
+    def train(self,
+              input_data,
+              exp_output_data=None,
+              eval_input_data=None,
+              eval_output_data=None):
         raise NotImplementedError('Abstract class shall not be implemented')
 
 
@@ -40,7 +46,11 @@ class EncoderTrainer(AbstractModelTrainer):
         self.y_zeros = zeros((self.batch_size, 1))
         self.y_ones = ones((self.batch_size, 1))
 
-    def train(self, input_data, exp_output_data):
+    def train(self,
+              input_data,
+              exp_output_data,
+              eval_input_data=None,
+              eval_output_data=None):
 
         print('========== Start encoder training ==========')
         for current_epoch in range(self.training_epochs):
@@ -114,7 +124,11 @@ class DecoderTrainer(AbstractModelTrainer):
         self.training_epochs = training_epochs
         self.batch_size = batch_size
 
-    def train(self, input_data, exp_output_data=None):
+    def train(self,
+              input_data,
+              exp_output_data=None,
+              eval_input_data=None,
+              eval_output_data=None):
 
         print('========== Start decoder training ==========')
 
@@ -145,3 +159,44 @@ class DecoderTrainer(AbstractModelTrainer):
         x_output = x_input
         loss, accuracy = self.decoder_gan.train_on_batch(x_input, x_output)
         return loss, accuracy
+
+
+"""
+Classifier Trainer
+"""
+
+
+class ClassifierTrainer(AbstractModelTrainer):
+
+    def __init__(self,
+                 classifier,
+                 training_epochs,
+                 batch_size):
+        self.classifier = classifier
+        self.training_epochs = training_epochs
+        self.batch_size = batch_size
+
+    def train(self,
+              input_data,  # x_train
+              exp_output_data,  # y_train
+              eval_input_data,  # x_test
+              eval_output_data):  # y_test
+
+        print('========== Start classifier training ==========')
+        # Callbacks
+        early_stopping = EarlyStopping(monitor='val_accuracy',
+                                       patience=10)
+        reduce_learning_rate = ReduceLROnPlateau(monitor='val_loss',
+                                                 factor=0.9,
+                                                 patience=5)
+        # Start training
+        history = self.classifier.fit(input_data,
+                                      exp_output_data,
+                                      epochs=self.training_epochs,
+                                      batch_size=self.batch_size,
+                                      validation_data=(eval_input_data,
+                                                       eval_output_data),
+                                      callbacks=[early_stopping, reduce_learning_rate])
+        accuracy = history.history['accuracy']
+        val_accuracy = history.history['val_accuracy']
+        return accuracy, val_accuracy
