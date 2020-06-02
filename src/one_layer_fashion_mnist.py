@@ -1,5 +1,6 @@
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.datasets import fashion_mnist
+from tensorflow.keras.models import load_model
 
 from generator_models import ImageGeneratorModelCreator
 from discriminator_models import DiscriminatorModelCreator
@@ -43,7 +44,8 @@ Load data
 
 # Load data
 (mnist_image_train, _), (mnist_image_test, _) = mnist.load_data()
-(fashion_image_train, _), (fashion_image_test, _) = fashion_mnist.load_data()
+(fashion_image_train, fashion_label_train), (fashion_image_test,
+                                             fashion_label_test) = fashion_mnist.load_data()
 
 # Rescale -1 to 1
 mnist_image_train_scaled = (mnist_image_train / 255.0) * 2 - 1
@@ -54,6 +56,13 @@ fashion_image_test_scaled = (fashion_image_test / 255.0) * 2 - 1
 """
 Create models
 """
+
+# Classifier
+try:
+    classifier = load_model('model/classifier_fashion.h5')
+except ImportError:
+    print('Unable to load classifier. Please run classifier script first')
+    sys.exit()
 
 # Encoder
 
@@ -125,6 +134,9 @@ encoder_generator_accuracy = []
 decoder_loss = []
 decoder_accuracy = []
 
+class_loss = []
+class_accuracy = []
+
 y_zeros = zeros((constants.DISPLAY_ROW * constants.DISPLAY_COLUMN, 1))
 y_ones = ones((constants.DISPLAY_ROW * constants.DISPLAY_COLUMN, 1))
 
@@ -145,6 +157,7 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
                                        fashion_image_test.shape[0],
                                        constants.DISPLAY_ROW * constants.DISPLAY_COLUMN)
     sample_images = fashion_image_test[sample_indexes]
+    sample_labels = fashion_label_test[sample_indexes]
 
     mnist_image_indexes = np.random.randint(0,
                                             mnist_image_test_scaled.shape[0],
@@ -156,7 +169,14 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
     image_displayer.display_samples(name=original_name,
                                     samples=sample_images,
                                     should_display_directly=should_display_directly,
-                                    should_save_to_file=should_save_to_file)
+                                    should_save_to_file=should_save_to_file,
+                                    labels=sample_labels)
+
+    # Evaluate images with labels
+    loss_class_original, acc_class_original = classifier.evaluate(sample_images,
+                                                                  sample_labels)
+    print('Original classification loss: {}, accuracy: {}'.format(
+        loss_class_original, acc_class_original))
 
     # Encode images
     sample_images_scaled = (sample_images / 255.0) * 2 - 1
@@ -178,11 +198,19 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
     # Display decoded images
     decoded_name = 'Decoded - {}'.format(current_round + 1)
     decoded_sample_images = (decoded_sample_images_scaled + 1) / 2 * 255
+
+    labels_probs = classifier.predict(decoded_sample_images)
+    decoded_sample_labels = []
+    for probs in labels_probs:
+        label = np.argmax(probs)
+        decoded_sample_labels.append(label)
+
     decoded_sample_images = decoded_sample_images[:, :, :, 0]
     image_displayer.display_samples(name=decoded_name,
                                     samples=decoded_sample_images,
                                     should_display_directly=should_display_directly,
-                                    should_save_to_file=should_save_to_file)
+                                    should_save_to_file=should_save_to_file,
+                                    labels=decoded_sample_labels)
 
     # Evaluate
     loss_fake, acc_fake = encoder_discriminator.evaluate(encoded_sample_images_scaled,
@@ -205,6 +233,14 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
 
     decoder_loss.append(loss)
     decoder_accuracy.append(accuracy)
+
+    # Evaluate images with labels
+    loss_class, acc_class = classifier.evaluate(decoded_sample_images,
+                                                sample_labels)
+    class_loss.append(loss_class)
+    class_accuracy.append(acc_class)
+    print('Decoded classification loss: {}, accuracy: {}'.format(
+        loss_class, acc_class))
 
 diagram_displayer.display_samples(name='Encoder Discriminator Loss',
                                   samples=encoder_discriminator_loss,
@@ -233,5 +269,15 @@ diagram_displayer.display_samples(name='Decoder Loss',
 
 diagram_displayer.display_samples(name='Decoder Accuracy',
                                   samples=decoder_accuracy,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
+
+diagram_displayer.display_samples(name='Class Loss',
+                                  samples=class_loss,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
+
+diagram_displayer.display_samples(name='Class Accuracy',
+                                  samples=class_accuracy,
                                   should_display_directly=should_display_directly,
                                   should_save_to_file=should_save_to_file)
