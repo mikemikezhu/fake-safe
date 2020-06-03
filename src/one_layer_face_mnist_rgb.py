@@ -357,3 +357,6 @@ diagram_displayer.display_samples(name='Class Accuracy',
                                   samples=class_accuracy,
                                   should_display_directly=should_display_directly,
                                   should_save_to_file=should_save_to_file)
+
+encoder_generator.save('model/one_layer_face_mnist_rgb_encoder_generator.h5')
+decoder_generator.save('model/one_layer_face_mnist_rgb_decoder_generator.h5')

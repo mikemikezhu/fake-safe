@@ -473,3 +473,9 @@ diagram_displayer.display_samples(name='Class Accuracy',
                                   samples=class_accuracy,
                                   should_display_directly=should_display_directly,
                                   should_save_to_file=should_save_to_file)
+
+outer_encoder_generator.save('model/two_layer_mnist_mnist_fashion_outer_encoder_generator.h5')
+inner_encoder_generator.save('model/two_layer_mnist_mnist_fashion_inner_encoder_generator.h5')
+
+outer_decoder_generator.save('model/two_layer_mnist_mnist_fashion_outer_decoder_generator.h5')
+inner_decoder_generator.save('model/two_layer_mnist_mnist_fashion_inner_decoder_generator.h5')

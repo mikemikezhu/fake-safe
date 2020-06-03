@@ -336,3 +336,6 @@ diagram_displayer.display_samples(name='Decoder Accuracy',
                                   should_save_to_file=should_save_to_file)
 
 print('Best accuracy: {}'.format(max(decoder_accuracy)))
+
+text_encoder.save('model/one_layer_text_fashion_encoder_generator.h5')
+text_decoder.save('model/one_layer_text_fashion_decoder_generator.h5')
