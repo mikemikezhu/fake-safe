@@ -101,3 +101,25 @@ class SampleConfusionMatrixDisplayer(AbstractSampleDisplayer):
         if should_save_to_file:
             plt.savefig('output/{}.png'.format(name))
             plt.close()
+
+
+class SampleReportDisplayer(AbstractSampleDisplayer):
+
+    def display_samples(self, name, samples,
+                        should_display_directly,
+                        should_save_to_file,
+                        labels=None):
+
+        # Display report
+        report_text = ''
+        for key, value in samples.items():
+            value = value if isinstance(value, str) else str(value)
+            report_text = report_text + key + ': \n' + value + '\n'
+
+        if should_display_directly:
+            print(report_text)
+
+        if should_save_to_file:
+            output_path = 'output/{}.txt'.format(name)
+            with open(output_path, 'w') as data_file:
+                data_file.write(report_text)
