@@ -449,6 +449,12 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
         'acc_class': acc_class
     }
 
+    report_name = 'Report - {}'.format(current_round + 1)
+    report_displayer.display_samples(name=report_name,
+                                     samples=report,
+                                     should_display_directly=should_display_directly,
+                                     should_save_to_file=should_save_to_file)
+
 diagram_displayer.display_samples(name='Outer Encoder Discriminator Loss',
                                   samples=encoder_discriminator_loss_outer,
                                   should_display_directly=should_display_directly,
