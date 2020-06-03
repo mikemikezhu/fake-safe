@@ -2,12 +2,16 @@ from tensorflow.keras.datasets import mnist
 from tensorflow.keras.datasets import fashion_mnist
 from tensorflow.keras.models import load_model
 
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
+
 from generator_models import ImageGeneratorModelCreator
 from discriminator_models import DiscriminatorModelCreator
 from gan_models import EncoderGanModelCreator, DecoderGanModelCreator
 
 from trainers import EncoderTrainer, DecoderTrainer
-from displayers import SampleImageDisplayer, SampleDiagramDisplayer
+from displayers import SampleImageDisplayer, SampleDiagramDisplayer, SampleConfusionMatrixDisplayer, SampleReportDisplayer
+
 
 from numpy import ones
 from numpy import zeros
@@ -125,6 +129,9 @@ image_displayer = SampleImageDisplayer(row=constants.DISPLAY_ROW,
 
 diagram_displayer = SampleDiagramDisplayer()
 
+confusion_displayer = SampleConfusionMatrixDisplayer()
+report_displayer = SampleReportDisplayer()
+
 encoder_discriminator_loss = []
 encoder_discriminator_accuracy = []
 
@@ -241,6 +248,37 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
     class_accuracy.append(acc_class)
     print('Decoded classification loss: {}, accuracy: {}'.format(
         loss_class, acc_class))
+
+    # Calculate recall and precision and f1 score
+    confusion = confusion_matrix(sample_labels,
+                                 decoded_sample_labels)
+    confusion_name = 'Confusion Matrix - {}'.format(current_round + 1)
+    confusion_displayer.display_samples(name=confusion_name,
+                                        samples=confusion,
+                                        should_display_directly=should_display_directly,
+                                        should_save_to_file=should_save_to_file)
+
+    classification = classification_report(sample_labels,
+                                           decoded_sample_labels)
+    report = {
+        'classification': classification,
+        'loss_class_original': loss_class_original,
+        'acc_class_original': acc_class_original,
+        'encoder_discriminator_loss': d_loss,
+        'encoder_discriminator_accuracy': d_acc,
+        'encoder_generator_loss': g_loss,
+        'encoder_generator_accuracy': g_acc,
+        'decoder_loss': loss,
+        'decoder_accuracy': accuracy,
+        'loss_class': loss_class,
+        'acc_class': acc_class
+    }
+
+    report_name = 'Report - {}'.format(current_round + 1)
+    report_displayer.display_samples(name=report_name,
+                                     samples=report,
+                                     should_display_directly=should_display_directly,
+                                     should_save_to_file=should_save_to_file)
 
 diagram_displayer.display_samples(name='Encoder Discriminator Loss',
                                   samples=encoder_discriminator_loss,

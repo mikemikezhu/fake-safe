@@ -1,5 +1,7 @@
 from tensorflow.keras.datasets import fashion_mnist
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
 
 from generator_models import TextEncoderGeneratorModelCreator
 from generator_models import TextDecoderGeneratorModelCreator
@@ -10,7 +12,7 @@ from gan_models import DecoderGanModelCreator
 from trainers import EncoderTrainer, DecoderTrainer
 
 from tokenizer import DefaultTokenizer
-from displayers import SampleTextDisplayer, SampleImageDisplayer, SampleDiagramDisplayer
+from displayers import SampleTextDisplayer, SampleImageDisplayer, SampleDiagramDisplayer, SampleConfusionMatrixDisplayer, SampleReportDisplayer
 
 from imblearn.over_sampling import RandomOverSampler
 
@@ -165,6 +167,8 @@ Start training
 
 text_displayer = SampleTextDisplayer()
 diagram_displayer = SampleDiagramDisplayer()
+confusion_displayer = SampleConfusionMatrixDisplayer()
+report_displayer = SampleReportDisplayer()
 image_displayer = SampleImageDisplayer(row=constants.DISPLAY_ROW,
                                        column=constants.DISPLAY_COLUMN,
                                        cmap='gray')
@@ -273,6 +277,33 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
                                    samples=decoded_words,
                                    should_display_directly=should_display_directly,
                                    should_save_to_file=should_save_to_file)
+
+    # Calculate recall and precision and f1 score
+    confusion = confusion_matrix(sample_words,
+                                 decoded_words)
+    confusion_name = 'Confusion Matrix - {}'.format(current_round + 1)
+    confusion_displayer.display_samples(name=confusion_name,
+                                        samples=confusion,
+                                        should_display_directly=should_display_directly,
+                                        should_save_to_file=should_save_to_file)
+
+    classification = classification_report(sample_words,
+                                           decoded_words)
+    report = {
+        'classification': classification,
+        'encoder_discriminator_loss': d_loss,
+        'encoder_discriminator_accuracy': d_acc,
+        'encoder_generator_loss': g_loss,
+        'encoder_generator_accuracy': g_acc,
+        'decoder_loss': loss,
+        'decoder_accuracy': accuracy
+    }
+
+    report_name = 'Report - {}'.format(current_round + 1)
+    report_displayer.display_samples(name=report_name,
+                                     samples=report,
+                                     should_display_directly=should_display_directly,
+                                     should_save_to_file=should_save_to_file)
 
 diagram_displayer.display_samples(name='Encoder Discriminator Loss',
                                   samples=encoder_discriminator_loss,
