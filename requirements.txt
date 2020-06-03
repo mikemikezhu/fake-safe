@@ -9,3 +9,4 @@ imbalanced-learn
 Pillow
 pyyaml
 h5py
+mlxtend
