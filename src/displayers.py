@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from mlxtend.plotting import plot_confusion_matrix
 from abc import ABC, abstractmethod
 
 
@@ -81,3 +82,22 @@ class SampleTextDisplayer(AbstractSampleDisplayer):
             with open(output_path, 'w') as data_file:
                 for sample in samples:
                     data_file.write(sample + '\n')
+
+
+class SampleConfusionMatrixDisplayer(AbstractSampleDisplayer):
+
+    def display_samples(self, name, samples,
+                        should_display_directly,
+                        should_save_to_file,
+                        labels=None):
+
+        # Display confusion matrix
+        fig, ax = plot_confusion_matrix(conf_mat=samples)
+        plt.title(name)
+
+        if should_display_directly:
+            plt.show()
+
+        if should_save_to_file:
+            plt.savefig('output/{}.png'.format(name))
+            plt.close()
