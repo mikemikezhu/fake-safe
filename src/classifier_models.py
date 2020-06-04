@@ -15,10 +15,14 @@ Classifier Model Creator
 
 class ClassifierModelCreator(AbstractModelCreator):
 
-    def __init__(self, input_shape, output_classes, name):
+    def __init__(self, input_shape, output_classes, name,
+                 activation='softmax',
+                 loss='sparse_categorical_crossentropy'):
         self.input_shape = input_shape
         self.output_classes = output_classes
         self.name = name
+        self.activation = activation
+        self.loss = loss
 
     def create_model(self):
 
@@ -42,10 +46,10 @@ class ClassifierModelCreator(AbstractModelCreator):
         model.add(LeakyReLU(alpha=0.2))
 
         model.add(Dense(self.output_classes,
-                        activation='softmax'))
+                        activation=self.activation))
 
         optimizer = Adam(0.0002, 0.5)
-        model.compile(loss='sparse_categorical_crossentropy',
+        model.compile(loss=self.loss,
                       optimizer=optimizer,
                       metrics=['accuracy'])
 
