@@ -39,7 +39,7 @@ pwd
 cd ..
 pwd
 
-if [ $script_name -eq 0 ]; then
+if [[ $script_name == 0 ]]; then
     python3 "src/classifier_face_rgb.py" $should_display_directly $should_save_to_file
     python3 "src/classifier_face.py" $should_display_directly $should_save_to_file
     python3 "src/classifier_mnist.py" $should_display_directly $should_save_to_file
