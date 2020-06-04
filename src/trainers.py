@@ -171,10 +171,14 @@ class ClassifierTrainer(AbstractModelTrainer):
     def __init__(self,
                  classifier,
                  training_epochs,
-                 batch_size):
+                 batch_size,
+                 should_early_stopping=True,
+                 should_reduce_learning_rate=True):
         self.classifier = classifier
         self.training_epochs = training_epochs
         self.batch_size = batch_size
+        self.should_early_stopping = should_early_stopping
+        self.should_reduce_learning_rate = should_reduce_learning_rate
 
     def train(self,
               input_data,  # x_train
@@ -184,11 +188,20 @@ class ClassifierTrainer(AbstractModelTrainer):
 
         print('========== Start classifier training ==========')
         # Callbacks
-        early_stopping = EarlyStopping(monitor='val_accuracy',
-                                       patience=10)
-        reduce_learning_rate = ReduceLROnPlateau(monitor='val_loss',
-                                                 factor=0.9,
-                                                 patience=5)
+        callbacks = None
+        if self.should_early_stopping or self.should_reduce_learning_rate:
+            callbacks = []
+            if self.should_early_stopping:
+                early_stopping = EarlyStopping(monitor='val_accuracy',
+                                               patience=10)
+                callbacks.append(early_stopping)
+
+            if self.should_reduce_learning_rate:
+                reduce_learning_rate = ReduceLROnPlateau(monitor='val_loss',
+                                                         factor=0.9,
+                                                         patience=5)
+                callbacks.append(reduce_learning_rate)
+
         # Start training
         history = self.classifier.fit(input_data,
                                       exp_output_data,
@@ -196,7 +209,7 @@ class ClassifierTrainer(AbstractModelTrainer):
                                       batch_size=self.batch_size,
                                       validation_data=(eval_input_data,
                                                        eval_output_data),
-                                      callbacks=[early_stopping, reduce_learning_rate])
+                                      callbacks=callbacks)
         accuracy = history.history['accuracy']
         val_accuracy = history.history['val_accuracy']
         return accuracy, val_accuracy
