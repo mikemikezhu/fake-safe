@@ -29,7 +29,7 @@ should_save_to_file = False if should_save_to_file == 0 else True
 print('Should save to file: {}'.format(should_save_to_file))
 
 print('************************')
-print('Classifier Face Pain')
+print('Classifier Face Pain RGB')
 print('************************')
 
 # Load data
@@ -47,7 +47,7 @@ for subdir, dirs, files in os.walk('../data/pain'):
 
 face_images = []
 pain_level_labels = []
-model_name = 'classifier_face_pain'
+model_name = 'classifier_face_pain_rgb'
 
 for face_file in os.scandir(constants.FACE_IMAGE_DATASET_PATH):
 
@@ -60,8 +60,7 @@ for face_file in os.scandir(constants.FACE_IMAGE_DATASET_PATH):
         pain_level_labels.append(pain_level)
         face_file_path = constants.FACE_IMAGE_DATASET_PATH + '/' + face_file_name
         face_image = Image.open(face_file_path)
-        grey_image = face_image.convert('L')
-        resized_image = grey_image.resize((28, 28))
+        resized_image = face_image.resize((28, 28))
         image_array = np.asarray(resized_image)
         face_images.append(image_array)
     else:
@@ -73,8 +72,8 @@ oversample = RandomOverSampler(sampling_strategy='minority')
 face_images = np.asarray(face_images)
 pain_level_labels = np.asarray(pain_level_labels)
 
-nsamples, nx, ny = face_images.shape
-face_images = face_images.reshape((nsamples, nx * ny))
+nsamples, nx, ny, nz = face_images.shape
+face_images = face_images.reshape((nsamples, nx*ny*nz))
 face_images, pain_level_labels = oversample.fit_resample(
     face_images, pain_level_labels)
 
@@ -82,7 +81,7 @@ print('Face images shape: {}'.format(face_images.shape))
 print('Pain level shape: {}'.format(pain_level_labels.shape))
 
 nsamples = face_images.shape[0]
-face_images = face_images.reshape((nsamples, nx, ny))
+face_images = face_images.reshape((nsamples, nx, ny, nz))
 
 print('Face images shape: {}'.format(face_images.shape))
 print('Pain level shape: {}'.format(pain_level_labels.shape))
@@ -96,7 +95,7 @@ print('y_train: {}'.format(y_train.shape))
 print('y_test: {}'.format(y_test.shape))
 
 # Create classifier
-classifier_creator = ClassifierModelCreator(constants.INPUT_SHAPE,
+classifier_creator = ClassifierModelCreator(constants.RGB_INPUT_SHAPE,
                                             1,
                                             model_name,
                                             activation='linear',
