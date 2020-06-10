@@ -1,6 +1,6 @@
 # FakeSafe - Encode Private Information into Fake Message Unrecognizable to Humans via Multi-Step Adversarial Network
 
-FakeSafe is a project which trains privacy preserving generative model that enables information transfer across data silos without compromising privacy and protect at both technological and human levels. This is the code implementation which demonstrates our idea of FakeSafe project
+FakeSafe is a project which trains privacy preserving generative model that enables information transfer across data silos without compromising privacy and protect at both technological and human levels. This is the code implementation which demonstrates our idea of FakeSafe project, which can be viewed on [GitHub](https://github.com/mikemikezhu/fake-safe).
 
 ## Instructions
 
