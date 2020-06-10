@@ -16,7 +16,9 @@ sh setup.sh
 
 The first parameter of the command specifies whether it is necessary to download the dataset.
 
-For the first time to run the project, developers are highly recommended to download the dataset by specifying a `1` in the first parameter of the command.
+For the time being, developers might probably need to download `eng.txt`, which is required to encode and decode the English text, and `face.zip`, the dataset which is used to encode and decode the human face images.
+
+If developers specify a `1` in the first parameter of the command, the dataset `eng.txt` will be downloaded into `data` folder. However, considering that `face.zip`, as part of the medical dataset, requires developers to conduct special training before getting the full access to it, please kindly contact [liudianbo@gmail.com](liudianbo@gmail.com) or [12051594@life.hkbu.edu.hk](12051594@life.hkbu.edu.hk) for more information about the dataset.
 
 ```shell
 sh setup.sh 1
