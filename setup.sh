@@ -13,9 +13,7 @@ if [ $should_download_data -eq 1 ]; then
     mkdir data
     cd data
     pwd
-    wget --no-check-certificate 'https://docs.google.com/uc?export=download&id=1AGpT3DzwX_jWZFXH3YIiEvEOTj2NOm7f' -O face.zip
     wget --no-check-certificate 'https://docs.google.com/uc?export=download&id=1z5ZkDafflgfX0vLqRPFpSeGfBtXx4uuK' -O eng.txt
-    unzip face.zip
     cd ..
     pwd
 fi
