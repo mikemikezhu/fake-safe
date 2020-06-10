@@ -1,5 +1,9 @@
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.datasets import fashion_mnist
+from tensorflow.keras.models import load_model
+
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 
 from generator_models import ImageGeneratorModelCreator
@@ -7,16 +11,16 @@ from discriminator_models import DiscriminatorModelCreator
 from gan_models import EncoderGanModelCreator, DecoderGanModelCreator
 
 from trainers import EncoderTrainer, DecoderTrainer
-from displayers import SampleImageDisplayer, SampleDiagramDisplayer
+from displayers import SampleImageDisplayer, SampleDiagramDisplayer, SampleConfusionMatrixDisplayer, SampleReportDisplayer
 
 from numpy import ones
 from numpy import zeros
 import numpy as np
 import constants
 
-import matplotlib.pyplot as plt
 import sys
 import os
+import re
 from PIL import Image
 
 """
@@ -44,22 +48,43 @@ print('Should save to file: {}'.format(should_save_to_file))
 """
 Load data
 """
-
 face_images = []
+face_labels = []
+
 for face_file in os.scandir(constants.FACE_IMAGE_DATASET_PATH):
-    face_file_path = constants.FACE_IMAGE_DATASET_PATH + '/' + face_file.name
+
+    face_file_name = face_file.name
+    face_label = re.findall('\d+', face_file_name)[0]
+    face_labels.append(face_label)
+
+    face_file_path = constants.FACE_IMAGE_DATASET_PATH + '/' + face_file_name
     face_image = Image.open(face_file_path)
     resized_image = face_image.resize((28, 28))
     image_array = np.asarray(resized_image)
     face_images.append(image_array)
+
 face_images = np.asarray(face_images)
+face_labels = np.asarray(face_labels)
+
+unique_labels = np.unique(face_labels)
+labels_to_index = {}
+for index in range(unique_labels.shape[0]):
+    label = unique_labels[index]
+    labels_to_index[label] = index
+print(labels_to_index)
+
+face_labels = [labels_to_index[label] for label in face_labels]
+face_labels = np.asarray(face_labels)
+
+print('Face images shape: {}'.format(face_images.shape))
+print('Face labels shape: {}'.format(face_labels.shape))
 
 # Load data
 (mnist_image_train, _), (mnist_image_test, _) = mnist.load_data()
 (fashion_image_train, _), (fashion_image_test, _) = fashion_mnist.load_data()
-face_images_train, face_images_test = train_test_split(face_images,
-                                                       test_size=0.15)
-
+face_images_train, face_images_test, face_labels_train, face_labels_test = train_test_split(face_images,
+                                                                                            face_labels,
+                                                                                            test_size=0.15)
 # Rescale -1 to 1
 mnist_image_train_scaled = (mnist_image_train / 255.0) * 2 - 1
 mnist_image_test_scaled = (mnist_image_test / 255.0) * 2 - 1
@@ -74,6 +99,13 @@ face_images_test_scaled = (face_images_test / 255.0) * 2 - 1
 Create models
 Outer layer models -> Inner layer models -> Outer layer models
 """
+
+# Classifier
+try:
+    classifier = load_model('model/classifier_face_rgb.h5')
+except ImportError:
+    print('Unable to load classifier. Please run classifier script first')
+    sys.exit()
 
 """ Encoder - Outer layer """
 
@@ -186,6 +218,9 @@ image_displayer_rgb = SampleImageDisplayer(row=constants.DISPLAY_ROW,
 
 diagram_displayer = SampleDiagramDisplayer()
 
+confusion_displayer = SampleConfusionMatrixDisplayer()
+report_displayer = SampleReportDisplayer()
+
 encoder_discriminator_loss_outer = []
 encoder_discriminator_accuracy_outer = []
 
@@ -203,6 +238,9 @@ decoder_accuracy_outer = []
 
 decoder_loss_inner = []
 decoder_accuracy_inner = []
+
+class_loss = []
+class_accuracy = []
 
 y_zeros = zeros((constants.DISPLAY_ROW * constants.DISPLAY_COLUMN, 1))
 y_ones = ones((constants.DISPLAY_ROW * constants.DISPLAY_COLUMN, 1))
@@ -226,6 +264,7 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
                                          face_images_test.shape[0],
                                          constants.DISPLAY_ROW * constants.DISPLAY_COLUMN)
     original_images = face_images_test[original_indexes]
+    original_labels = face_labels_test[original_indexes]
 
     fashion_indexes = np.random.randint(0,
                                         fashion_image_test_scaled.shape[0],
@@ -242,7 +281,14 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
     image_displayer_rgb.display_samples(name=original_name,
                                         samples=original_images,
                                         should_display_directly=should_display_directly,
-                                        should_save_to_file=should_save_to_file)
+                                        should_save_to_file=should_save_to_file,
+                                        labels=original_labels)
+
+    # Evaluate images with labels
+    loss_class_original, acc_class_original = classifier.evaluate(original_images,
+                                                                  original_labels)
+    print('Original classification loss: {}, accuracy: {}'.format(
+        loss_class_original, acc_class_original))
 
     """ Encoder - Outer layer """
 
@@ -343,10 +389,18 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
     outer_decoded_name = '{} - 5 - Outer - Decoded'.format(current_round + 1)
     outer_decoded_images = (outer_decoded_images_scaled + 1) / 2 * 255
     outer_decoded_images = outer_decoded_images.astype(int)
+
+    labels_probs = classifier.predict(outer_decoded_images)
+    decoded_labels = []
+    for probs in labels_probs:
+        label = np.argmax(probs)
+        decoded_labels.append(label)
+
     image_displayer_rgb.display_samples(name=outer_decoded_name,
                                         samples=outer_decoded_images,
                                         should_display_directly=should_display_directly,
-                                        should_save_to_file=should_save_to_file)
+                                        should_save_to_file=should_save_to_file,
+                                        labels=decoded_labels)
 
     # Evaluate
     loss_outer, accuracy_outer = outer_decoder_gan.evaluate(original_images_scaled,
@@ -354,6 +408,55 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
 
     decoder_loss_outer.append(loss_outer)
     decoder_accuracy_outer.append(accuracy_outer)
+
+    loss_class, acc_class = classifier.evaluate(outer_decoded_images,
+                                                original_labels)
+    class_loss.append(loss_class)
+    class_accuracy.append(acc_class)
+    print('Decoded classification loss: {}, accuracy: {}'.format(
+        loss_class, acc_class))
+
+    # Calculate recall and precision and f1 score
+    confusion = confusion_matrix(original_labels,
+                                 decoded_labels)
+    confusion_name = 'Confusion Matrix - {}'.format(current_round + 1)
+    confusion_displayer.display_samples(name=confusion_name,
+                                        samples=confusion,
+                                        should_display_directly=should_display_directly,
+                                        should_save_to_file=should_save_to_file)
+
+    classification = classification_report(original_labels,
+                                           decoded_labels)
+    report = {
+        'classification': classification,
+        'loss_class_original': loss_class_original,
+        'acc_class_original': acc_class_original,
+
+        'encoder_discriminator_loss_outer': d_loss_outer,
+        'encoder_discriminator_accuracy_outer': d_acc_outer,
+        'encoder_generator_loss_outer': g_loss_outer,
+        'encoder_generator_accuracy_outer': g_acc_outer,
+
+        'encoder_discriminator_loss_inner': d_loss_inner,
+        'encoder_discriminator_accuracy_inner': d_acc_inner,
+        'encoder_generator_loss_inner': g_loss_inner,
+        'encoder_generator_accuracy_inner': g_acc_inner,
+
+        'decoder_loss_inner': loss_inner,
+        'decoder_accuracy_inner': accuracy_inner,
+
+        'decoder_loss_outer': loss_outer,
+        'decoder_accuracy_outer': accuracy_outer,
+
+        'loss_class': loss_class,
+        'acc_class': acc_class
+    }
+
+    report_name = 'Report - {}'.format(current_round + 1)
+    report_displayer.display_samples(name=report_name,
+                                     samples=report,
+                                     should_display_directly=should_display_directly,
+                                     should_save_to_file=should_save_to_file)
 
 diagram_displayer.display_samples(name='Outer Encoder Discriminator Loss',
                                   samples=encoder_discriminator_loss_outer,
@@ -414,3 +517,19 @@ diagram_displayer.display_samples(name='Inner Decoder Accuracy',
                                   samples=decoder_accuracy_inner,
                                   should_display_directly=should_display_directly,
                                   should_save_to_file=should_save_to_file)
+
+diagram_displayer.display_samples(name='Class Loss',
+                                  samples=class_loss,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
+
+diagram_displayer.display_samples(name='Class Accuracy',
+                                  samples=class_accuracy,
+                                  should_display_directly=should_display_directly,
+                                  should_save_to_file=should_save_to_file)
+
+outer_encoder_generator.save('model/two_layer_face_fashion_mnist_rgb_outer_encoder_generator.h5')
+inner_encoder_generator.save('model/two_layer_face_fashion_mnist_rgb_inner_encoder_generator.h5')
+
+outer_decoder_generator.save('model/two_layer_face_fashion_mnist_rgb_outer_decoder_generator.h5')
+inner_decoder_generator.save('model/two_layer_face_fashion_mnist_rgb_inner_decoder_generator.h5')

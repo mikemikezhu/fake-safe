@@ -555,3 +555,6 @@ output
 
 # Data folder
 data
+
+# Model folder
+model

@@ -1,9 +1,9 @@
 from tensorflow.keras.datasets import mnist
+from tensorflow.keras.datasets import fashion_mnist
 from tensorflow.keras.models import load_model
 
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
-from sklearn.model_selection import train_test_split
 
 from generator_models import ImageGeneratorModelCreator
 from discriminator_models import DiscriminatorModelCreator
@@ -12,19 +12,17 @@ from gan_models import EncoderGanModelCreator, DecoderGanModelCreator
 from trainers import EncoderTrainer, DecoderTrainer
 from displayers import SampleImageDisplayer, SampleDiagramDisplayer, SampleConfusionMatrixDisplayer, SampleReportDisplayer
 
+
 from numpy import ones
 from numpy import zeros
 import numpy as np
 import constants
 
 import sys
-import os
-import re
-from PIL import Image
 
 """
 One layer encoding-decoding:
-Face -> (Encode) -> MNIST -> (Decode) -> Face
+MNIST -> (Encode) -> Fashion -> (Decode) -> MNIST
 """
 
 """
@@ -48,48 +46,17 @@ print('Should save to file: {}'.format(should_save_to_file))
 Load data
 """
 
-face_images = []
-face_labels = []
-
-for face_file in os.scandir(constants.FACE_IMAGE_DATASET_PATH):
-
-    face_file_name = face_file.name
-    face_label = re.findall('\d+', face_file_name)[0]
-    face_labels.append(face_label)
-
-    face_file_path = constants.FACE_IMAGE_DATASET_PATH + '/' + face_file_name
-    face_image = Image.open(face_file_path)
-    resized_image = face_image.resize((28, 28))
-    image_array = np.asarray(resized_image)
-    face_images.append(image_array)
-
-face_images = np.asarray(face_images)
-face_labels = np.asarray(face_labels)
-
-unique_labels = np.unique(face_labels)
-labels_to_index = {}
-for index in range(unique_labels.shape[0]):
-    label = unique_labels[index]
-    labels_to_index[label] = index
-print(labels_to_index)
-
-face_labels = [labels_to_index[label] for label in face_labels]
-face_labels = np.asarray(face_labels)
-
-print('Face images shape: {}'.format(face_images.shape))
-print('Face labels shape: {}'.format(face_labels.shape))
-
 # Load data
-(mnist_image_train, _), (mnist_image_test, _) = mnist.load_data()
-face_images_train, face_images_test, face_labels_train, face_labels_test = train_test_split(face_images,
-                                                                                            face_labels,
-                                                                                            test_size=0.15)
+(mnist_image_train, mnist_label_train), (mnist_image_test,
+                                         mnist_label_test) = mnist.load_data()
+(fashion_image_train, fashion_label_train), (fashion_image_test,
+                                             fashion_label_test) = fashion_mnist.load_data()
+
 # Rescale -1 to 1
 mnist_image_train_scaled = (mnist_image_train / 255.0) * 2 - 1
 mnist_image_test_scaled = (mnist_image_test / 255.0) * 2 - 1
-
-face_images_train_scaled = (face_images_train / 255.0) * 2 - 1
-face_images_test_scaled = (face_images_test / 255.0) * 2 - 1
+fashion_image_train_scaled = (fashion_image_train / 255.0) * 2 - 1
+fashion_image_test_scaled = (fashion_image_test / 255.0) * 2 - 1
 
 """
 Create models
@@ -97,7 +64,7 @@ Create models
 
 # Classifier
 try:
-    classifier = load_model('model/classifier_face_rgb.h5')
+    classifier = load_model('model/classifier_mnist.h5')
 except ImportError:
     print('Unable to load classifier. Please run classifier script first')
     sys.exit()
@@ -105,7 +72,7 @@ except ImportError:
 # Encoder
 
 # Create encoder generator
-encoder_generator_creator = ImageGeneratorModelCreator(constants.RGB_INPUT_SHAPE,
+encoder_generator_creator = ImageGeneratorModelCreator(constants.INPUT_SHAPE,
                                                        constants.OUTPUT_SHAPE)
 encoder_generator = encoder_generator_creator.create_model()
 
@@ -123,7 +90,7 @@ encoder_gan = encoder_gan_creator.create_model()
 
 # Create decoder generator
 decoder_generator_creator = ImageGeneratorModelCreator(constants.INPUT_SHAPE,
-                                                       constants.RGB_OUTPUT_SHAPE)
+                                                       constants.OUTPUT_SHAPE)
 decoder_generator = decoder_generator_creator.create_model()
 
 # Create GAN model to combine encoder generator and decoder generator
@@ -157,12 +124,9 @@ decoder_trainer = DecoderTrainer(encoder_generator,
 Start training
 """
 
-image_displayer_gray = SampleImageDisplayer(row=constants.DISPLAY_ROW,
-                                            column=constants.DISPLAY_COLUMN,
-                                            cmap='gray')
-
-image_displayer_rgb = SampleImageDisplayer(row=constants.DISPLAY_ROW,
-                                           column=constants.DISPLAY_COLUMN)
+image_displayer = SampleImageDisplayer(row=constants.DISPLAY_ROW,
+                                       column=constants.DISPLAY_COLUMN,
+                                       cmap='gray')
 
 diagram_displayer = SampleDiagramDisplayer()
 
@@ -191,30 +155,30 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
     print('************************')
 
     # Train encoder
-    encoder_trainer.train(input_data=face_images_train_scaled,
-                          exp_output_data=mnist_image_train_scaled)
+    encoder_trainer.train(input_data=mnist_image_train_scaled,
+                          exp_output_data=fashion_image_train_scaled)
     # Train decoder
-    decoder_trainer.train(input_data=face_images_train_scaled)
+    decoder_trainer.train(input_data=mnist_image_train_scaled)
 
     # Select sample of images
     sample_indexes = np.random.randint(0,
-                                       face_images_test.shape[0],
+                                       mnist_image_test.shape[0],
                                        constants.DISPLAY_ROW * constants.DISPLAY_COLUMN)
-    sample_images = face_images_test[sample_indexes]
-    sample_labels = face_labels_test[sample_indexes]
+    sample_images = mnist_image_test[sample_indexes]
+    sample_labels = mnist_label_test[sample_indexes]
 
-    mnist_image_indexes = np.random.randint(0,
-                                            mnist_image_test_scaled.shape[0],
-                                            constants.DISPLAY_ROW * constants.DISPLAY_COLUMN)
-    sample_mnist_image = mnist_image_test_scaled[mnist_image_indexes]
+    fashion_image_indexes = np.random.randint(0,
+                                              fashion_image_test_scaled.shape[0],
+                                              constants.DISPLAY_ROW * constants.DISPLAY_COLUMN)
+    sample_fashion_image = fashion_image_test_scaled[fashion_image_indexes]
 
     # Display original images
     original_name = 'Original - {}'.format(current_round + 1)
-    image_displayer_rgb.display_samples(name=original_name,
-                                        samples=sample_images,
-                                        should_display_directly=should_display_directly,
-                                        should_save_to_file=should_save_to_file,
-                                        labels=sample_labels)
+    image_displayer.display_samples(name=original_name,
+                                    samples=sample_images,
+                                    should_display_directly=should_display_directly,
+                                    should_save_to_file=should_save_to_file,
+                                    labels=sample_labels)
 
     # Evaluate images with labels
     loss_class_original, acc_class_original = classifier.evaluate(sample_images,
@@ -231,10 +195,10 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
     encoded_name = 'Encoded - {}'.format(current_round + 1)
     encoded_sample_images = (encoded_sample_images_scaled + 1) / 2 * 255
     encoded_sample_images = encoded_sample_images[:, :, :, 0]
-    image_displayer_gray.display_samples(name=encoded_name,
-                                         samples=encoded_sample_images,
-                                         should_display_directly=should_display_directly,
-                                         should_save_to_file=should_save_to_file)
+    image_displayer.display_samples(name=encoded_name,
+                                    samples=encoded_sample_images,
+                                    should_display_directly=should_display_directly,
+                                    should_save_to_file=should_save_to_file)
 
     # Decode images
     decoded_sample_images_scaled = decoder_gan.predict(sample_images_scaled)
@@ -242,7 +206,6 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
     # Display decoded images
     decoded_name = 'Decoded - {}'.format(current_round + 1)
     decoded_sample_images = (decoded_sample_images_scaled + 1) / 2 * 255
-    decoded_sample_images = decoded_sample_images.astype(int)
 
     labels_probs = classifier.predict(decoded_sample_images)
     decoded_sample_labels = []
@@ -250,16 +213,17 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
         label = np.argmax(probs)
         decoded_sample_labels.append(label)
 
-    image_displayer_rgb.display_samples(name=decoded_name,
-                                        samples=decoded_sample_images,
-                                        should_display_directly=should_display_directly,
-                                        should_save_to_file=should_save_to_file,
-                                        labels=decoded_sample_labels)
+    decoded_sample_images = decoded_sample_images[:, :, :, 0]
+    image_displayer.display_samples(name=decoded_name,
+                                    samples=decoded_sample_images,
+                                    should_display_directly=should_display_directly,
+                                    should_save_to_file=should_save_to_file,
+                                    labels=decoded_sample_labels)
 
     # Evaluate
     loss_fake, acc_fake = encoder_discriminator.evaluate(encoded_sample_images_scaled,
                                                          y_zeros)
-    loss_real, acc_real = encoder_discriminator.evaluate(sample_mnist_image,
+    loss_real, acc_real = encoder_discriminator.evaluate(sample_fashion_image,
                                                          y_ones)
     d_loss, d_acc = 0.5 * \
         np.add(loss_fake, loss_real), 0.5 * np.add(acc_fake, acc_real)
@@ -317,7 +281,6 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
                                      should_display_directly=should_display_directly,
                                      should_save_to_file=should_save_to_file)
 
-
 diagram_displayer.display_samples(name='Encoder Discriminator Loss',
                                   samples=encoder_discriminator_loss,
                                   should_display_directly=should_display_directly,
@@ -358,5 +321,5 @@ diagram_displayer.display_samples(name='Class Accuracy',
                                   should_display_directly=should_display_directly,
                                   should_save_to_file=should_save_to_file)
 
-encoder_generator.save('model/one_layer_face_mnist_rgb_encoder_generator.h5')
-decoder_generator.save('model/one_layer_face_mnist_rgb_decoder_generator.h5')
+encoder_generator.save('model/one_layer_mnist_fashion_encoder_generator.h5')
+decoder_generator.save('model/one_layer_mnist_fashion_decoder_generator.h5')
