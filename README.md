@@ -121,8 +121,8 @@ one_layer_fashion_mnist
 one_layer_mnist_fashion
 # MNIST -> MNIST -> MNIST
 one_layer_mnist_mnist
-# Text -> Fashion -> Text
-one_layer_text_fashion
+# Word -> Fashion -> Word
+one_layer_word_fashion
 
 # Two layer
 # Face -> Fashion -> MNIST -> Fashion -> Face (RGB)

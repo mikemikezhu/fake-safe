@@ -3,8 +3,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 
-from generator_models import TextEncoderGeneratorModelCreator
-from generator_models import TextDecoderGeneratorModelCreator
+from generator_models import WordEncoderGeneratorModelCreator
+from generator_models import WordDecoderGeneratorModelCreator
 from discriminator_models import DiscriminatorModelCreator
 from gan_models import EncoderGanModelCreator
 from gan_models import DecoderGanModelCreator
@@ -26,7 +26,7 @@ import sys
 
 """
 One layer encoding-decoding:
-Text -> (Encode) -> Fashion -> (Decode) -> Text
+Word -> (Encode) -> Fashion -> (Decode) -> Word
 """
 
 """
@@ -110,11 +110,11 @@ Create models
 
 """ Encoder """
 
-# text -> image
-text_encoder_creator = TextEncoderGeneratorModelCreator(constants.INPUT_SHAPE,
+# word -> image
+word_encoder_creator = WordEncoderGeneratorModelCreator(constants.INPUT_SHAPE,
                                                         constants.OUTPUT_SHAPE,
                                                         vocabulary_size)
-text_encoder = text_encoder_creator.create_model()
+word_encoder = word_encoder_creator.create_model()
 
 # Discriminator
 encoder_discriminator_creator = DiscriminatorModelCreator(
@@ -122,20 +122,20 @@ encoder_discriminator_creator = DiscriminatorModelCreator(
 encoder_discriminator = encoder_discriminator_creator.create_model()
 
 # GAN (Combine encoder generator and discriminator)
-encoder_gan_creator = EncoderGanModelCreator(text_encoder,
+encoder_gan_creator = EncoderGanModelCreator(word_encoder,
                                              encoder_discriminator)
 encoder_gan = encoder_gan_creator.create_model()
 
 """ Decoder """
 
-# image -> text
-text_decoder_creator = TextDecoderGeneratorModelCreator(constants.INPUT_SHAPE,
+# image -> word
+word_decoder_creator = WordDecoderGeneratorModelCreator(constants.INPUT_SHAPE,
                                                         vocabulary_size)
-text_decoder = text_decoder_creator.create_model()
+word_decoder = word_decoder_creator.create_model()
 
 # GAN (Combine state2image generator and image2state generator)
-decoder_gan_creator = DecoderGanModelCreator(text_encoder,
-                                             text_decoder,
+decoder_gan_creator = DecoderGanModelCreator(word_encoder,
+                                             word_decoder,
                                              loss='sparse_categorical_crossentropy')
 decoder_gan = decoder_gan_creator.create_model()
 
@@ -145,8 +145,8 @@ Create trainers
 
 """ Encoder """
 
-# text -> image
-encoder_trainer = EncoderTrainer(text_encoder,
+# word -> image
+encoder_trainer = EncoderTrainer(word_encoder,
                                  encoder_discriminator,
                                  encoder_gan,
                                  training_epochs=constants.TRAINING_EPOCHS,
@@ -154,9 +154,9 @@ encoder_trainer = EncoderTrainer(text_encoder,
 
 """ Decoder """
 
-# image -> text
-decoder_trainer = DecoderTrainer(text_encoder,
-                                 text_decoder,
+# image -> word
+decoder_trainer = DecoderTrainer(word_encoder,
+                                 word_decoder,
                                  decoder_gan,
                                  training_epochs=constants.TRAINING_EPOCHS,
                                  batch_size=constants.BATCH_SIZE)
@@ -193,11 +193,11 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
 
     """ Train """
 
-    # text -> image
+    # word -> image
     encoder_trainer.train(input_data=tokens_train,
                           exp_output_data=fashion_image_train_scaled)
 
-    # image -> text
+    # image -> word
     decoder_trainer.train(input_data=tokens_train)
 
     """ Inference """
@@ -228,7 +228,7 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
                                    should_save_to_file=should_save_to_file)
 
     # Encode images
-    encoded_sample_images_scaled = text_encoder.predict(sample_tokens)
+    encoded_sample_images_scaled = word_encoder.predict(sample_tokens)
 
     # Evaluate
     loss_fake, acc_fake = encoder_discriminator.evaluate(encoded_sample_images_scaled,
@@ -255,7 +255,7 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
                                     should_display_directly=should_display_directly,
                                     should_save_to_file=should_save_to_file)
 
-    # Decode images to text
+    # Decode images to word
     loss, accuracy = decoder_gan.evaluate(sample_tokens, sample_tokens)
     decoder_loss.append(loss)
     decoder_accuracy.append(accuracy)
@@ -271,7 +271,7 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
     print(sample_words)
     print(decoded_words)
 
-    # Display decoded text
+    # Display decoded word
     decoded_name = '{} - 3 - Decoded'.format(current_round + 1)
     text_displayer.display_samples(name=decoded_name,
                                    samples=decoded_words,
@@ -337,5 +337,5 @@ diagram_displayer.display_samples(name='Decoder Accuracy',
 
 print('Best accuracy: {}'.format(max(decoder_accuracy)))
 
-text_encoder.save('model/one_layer_text_fashion_encoder_generator.h5')
-text_decoder.save('model/one_layer_text_fashion_decoder_generator.h5')
+word_encoder.save('model/one_layer_word_fashion_encoder_generator.h5')
+word_decoder.save('model/one_layer_word_fashion_decoder_generator.h5')

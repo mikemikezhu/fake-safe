@@ -50,7 +50,7 @@ class ImageGeneratorModelCreator(AbstractModelCreator):
 """ Word -> Image """
 
 
-class TextEncoderGeneratorModelCreator(AbstractModelCreator):
+class WordEncoderGeneratorModelCreator(AbstractModelCreator):
 
     def __init__(self, input_shape, output_shape, vocabulary_size):
         self.input_shape = input_shape
@@ -80,7 +80,7 @@ class TextEncoderGeneratorModelCreator(AbstractModelCreator):
         model.add(Dense(np.prod(self.output_shape), activation='tanh'))
         model.add(Reshape(self.output_shape))
 
-        print('Text to Image Generator model:')
+        print('Word to Image Generator model:')
         model.summary()
 
         return model
@@ -89,7 +89,7 @@ class TextEncoderGeneratorModelCreator(AbstractModelCreator):
 """ Image -> Word """
 
 
-class TextDecoderGeneratorModelCreator(AbstractModelCreator):
+class WordDecoderGeneratorModelCreator(AbstractModelCreator):
 
     def __init__(self, input_shape, vocabulary_size):
         self.input_shape = input_shape
@@ -119,7 +119,7 @@ class TextDecoderGeneratorModelCreator(AbstractModelCreator):
         model.add(Dense(self.vocabulary_size,
                         activation='softmax'))
 
-        print('Image to Text Generator model:')
+        print('Image to Word Generator model:')
         model.summary()
 
         return model
