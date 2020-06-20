@@ -5,3 +5,8 @@ pylint
 autopep8
 tensorflow
 matplotlib
+imbalanced-learn
+Pillow
+pyyaml
+h5py
+mlxtend

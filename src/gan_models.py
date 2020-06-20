@@ -1,6 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras.layers import add, BatchNormalization, Dense, Embedding, Flatten, GlobalMaxPool1D, Input, LeakyReLU, GRU, Lambda, Reshape
-from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.models import Sequential
 from tensorflow.keras.optimizers import Adam
 import numpy as np
 from abstract_models import AbstractModelCreator
@@ -44,8 +43,6 @@ class EncoderGanModelCreator(AbstractModelCreator):
         return model
 
 
-print('Tensorflow version: {}'.format(tf.__version__))
-
 """
 Decoder GAN Model Creator
 This is a logical model to combine encoder generator and decoder generator
@@ -56,9 +53,11 @@ class DecoderGanModelCreator(AbstractModelCreator):
 
     def __init__(self,
                  encoder_generator,
-                 decoder_generator):
+                 decoder_generator,
+                 loss='mae'):
         self.encoder_generator = encoder_generator
         self.decoder_generator = decoder_generator
+        self.loss = loss
 
     def create_model(self):
 
@@ -74,7 +73,7 @@ class DecoderGanModelCreator(AbstractModelCreator):
         model.add(self.decoder_generator)
 
         optimizer = Adam(0.0002, 0.5)
-        model.compile(loss='mae',
+        model.compile(loss=self.loss,
                       optimizer=optimizer,
                       metrics=['accuracy'])
 
