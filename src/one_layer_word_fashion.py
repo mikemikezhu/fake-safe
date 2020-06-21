@@ -3,8 +3,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 
-from generator_models import WordEncoderGeneratorModelCreator
-from generator_models import WordDecoderGeneratorModelCreator
+from generator_models import DefaultEncoderGeneratorModelCreator
+from generator_models import DefaultDecoderGeneratorModelCreator
 from discriminator_models import DiscriminatorModelCreator
 from gan_models import EncoderGanModelCreator
 from gan_models import DecoderGanModelCreator
@@ -111,9 +111,8 @@ Create models
 """ Encoder """
 
 # word -> image
-word_encoder_creator = WordEncoderGeneratorModelCreator(constants.INPUT_SHAPE,
-                                                        constants.OUTPUT_SHAPE,
-                                                        vocabulary_size)
+word_encoder_creator = DefaultEncoderGeneratorModelCreator(input_shape=(1,),
+                                                           output_shape=constants.OUTPUT_SHAPE)
 word_encoder = word_encoder_creator.create_model()
 
 # Discriminator
@@ -129,8 +128,9 @@ encoder_gan = encoder_gan_creator.create_model()
 """ Decoder """
 
 # image -> word
-word_decoder_creator = WordDecoderGeneratorModelCreator(constants.INPUT_SHAPE,
-                                                        vocabulary_size)
+word_decoder_creator = DefaultDecoderGeneratorModelCreator(input_shape=constants.INPUT_SHAPE,
+                                                           output_shape=vocabulary_size,
+                                                           activation='softmax')
 word_decoder = word_decoder_creator.create_model()
 
 # GAN (Combine state2image generator and image2state generator)
