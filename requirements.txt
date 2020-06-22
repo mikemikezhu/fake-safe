@@ -10,3 +10,4 @@ Pillow
 pyyaml
 h5py
 mlxtend
+nltk
