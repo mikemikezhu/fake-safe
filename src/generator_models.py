@@ -143,42 +143,6 @@ class DefaultDecoderGeneratorModelCreator(AbstractModelCreator):
         return model
 
 
-""" Image -> Image """
-
-
-class ImageGeneratorModelCreator(AbstractModelCreator):
-
-    def __init__(self, input_shape, output_shape):
-        self.input_shape = input_shape
-        self.output_shape = output_shape
-
-    def create_model(self):
-
-        model = Sequential()
-
-        model.add(Flatten(input_shape=self.input_shape))
-
-        model.add(Dense(256))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(BatchNormalization(momentum=0.8))
-
-        model.add(Dense(512))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(BatchNormalization(momentum=0.8))
-
-        model.add(Dense(1024))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(BatchNormalization(momentum=0.8))
-
-        model.add(Dense(np.prod(self.output_shape), activation='tanh'))
-        model.add(Reshape(self.output_shape))
-
-        print('Image to Image Generator model:')
-        model.summary()
-
-        return model
-
-
 """ Sentence -> State -> Sentence """
 
 
