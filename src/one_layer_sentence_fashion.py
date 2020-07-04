@@ -2,8 +2,7 @@ from tensorflow.keras.datasets import fashion_mnist
 from sklearn.model_selection import train_test_split
 
 from generator_models import Seq2SeqModelCreator
-from generator_models import DefaultEncoderGeneratorModelCreator
-from generator_models import DefaultDecoderGeneratorModelCreator
+from generator_models import GeneratorModelCreator
 from discriminator_models import DiscriminatorModelCreator
 from gan_models import EncoderGanModelCreator
 from gan_models import DecoderGanModelCreator
@@ -156,8 +155,10 @@ seq2seq_train_model, seq2seq_encoder_model, seq2seq_decoder_model = seq2seq_mode
 """ Encoder """
 
 # state -> image
-state_encoder_creator = DefaultEncoderGeneratorModelCreator(input_shape=(256,),
-                                                            output_shape=constants.OUTPUT_SHAPE)
+state_encoder_creator = GeneratorModelCreator(input_shape=(256,),
+                                              output_shape=constants.OUTPUT_SHAPE,
+                                              to_image=True,
+                                              activation='tanh')
 state_encoder = state_encoder_creator.create_model()
 
 # Discriminator
@@ -173,9 +174,9 @@ encoder_gan = encoder_gan_creator.create_model()
 """ Decoder """
 
 # image -> state
-state_decoder_creator = DefaultDecoderGeneratorModelCreator(input_shape=constants.INPUT_SHAPE,
-                                                            output_shape=256,
-                                                            activation='linear')
+state_decoder_creator = GeneratorModelCreator(input_shape=constants.INPUT_SHAPE,
+                                              output_shape=256,
+                                              from_image=True)
 state_decoder = state_decoder_creator.create_model()
 
 # GAN (Combine state2image generator and image2state generator)

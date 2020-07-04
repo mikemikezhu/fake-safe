@@ -4,8 +4,7 @@ from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from scipy.spatial.distance import cosine
 
-from generator_models import DefaultEncoderGeneratorModelCreator
-from generator_models import DefaultDecoderGeneratorModelCreator
+from generator_models import GeneratorModelCreator
 from discriminator_models import DiscriminatorModelCreator
 from gan_models import EncoderGanModelCreator
 from gan_models import DecoderGanModelCreator
@@ -139,8 +138,10 @@ Create models
 """ Encoder """
 
 # word -> image
-word_encoder_creator = DefaultEncoderGeneratorModelCreator(input_shape=(50,),
-                                                           output_shape=constants.OUTPUT_SHAPE)
+word_encoder_creator = GeneratorModelCreator(input_shape=(50,),
+                                             output_shape=constants.OUTPUT_SHAPE,
+                                             to_image=True,
+                                             activation='tanh')
 word_encoder = word_encoder_creator.create_model()
 
 # Discriminator
@@ -156,8 +157,9 @@ encoder_gan = encoder_gan_creator.create_model()
 """ Decoder """
 
 # image -> word
-word_decoder_creator = DefaultDecoderGeneratorModelCreator(input_shape=constants.INPUT_SHAPE,
-                                                           output_shape=50)
+word_decoder_creator = GeneratorModelCreator(input_shape=constants.INPUT_SHAPE,
+                                             output_shape=50,
+                                             from_image=True)
 word_decoder = word_decoder_creator.create_model()
 
 # GAN (Combine state2image generator and image2state generator)
