@@ -1,7 +1,7 @@
 from tensorflow.keras.datasets import fashion_mnist
 from sklearn.model_selection import train_test_split
 
-from generator_models import Seq2SeqModelCreator
+from seq2seq_models import Seq2SeqModelCreator
 from generator_models import GeneratorModelCreator
 from discriminator_models import DiscriminatorModelCreator
 from gan_models import EncoderGanModelCreator
