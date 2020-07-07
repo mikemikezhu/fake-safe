@@ -162,6 +162,57 @@ class DecoderTrainer(AbstractModelTrainer):
 
 
 """
+Seq2Seq Trainer
+"""
+
+
+class Seq2SeqTrainer(AbstractModelTrainer):
+
+    def __init__(self,
+                 seq2seq_model,
+                 training_epochs,
+                 batch_size):
+
+        self.seq2seq_model = seq2seq_model
+        self.training_epochs = training_epochs
+        self.batch_size = batch_size
+
+    def train(self,
+              input_data,  # [input_encoder, input_decoder]
+              exp_output_data,  # decoder target predictions
+              eval_input_data=None,
+              eval_output_data=None):
+
+        print('========== Start seq2seq training ==========')
+
+        input_data_encoder, input_data_decoder = input_data
+        input_length = input_data_encoder.shape[0]
+
+        for current_epoch in range(self.training_epochs):
+
+            # Select a random batch of data
+            input_indexes = np.random.randint(0,
+                                              input_length,
+                                              self.batch_size)
+
+            x_input_encoder = input_data_encoder[input_indexes]
+            x_input_decoder = input_data_decoder[input_indexes]
+
+            x_input = [x_input_encoder, x_input_decoder]
+            y_input = exp_output_data[input_indexes]
+
+            # ---------------------
+            #  Train seq2seq model
+            # ---------------------
+            loss, accuracy = self.seq2seq_model.train_on_batch(x_input,
+                                                               y_input)
+
+            # Plot the progress
+            print('[Seq2Seq] - epochs: {}, loss: {}, accuracy: {}'.format(
+                (current_epoch + 1), loss, accuracy))
+
+
+"""
 Classifier Trainer
 """
 
