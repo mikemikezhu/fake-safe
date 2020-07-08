@@ -121,8 +121,16 @@ one_layer_fashion_mnist
 one_layer_mnist_fashion
 # MNIST -> MNIST -> MNIST
 one_layer_mnist_mnist
-# Text -> Fashion -> Text
-one_layer_text_fashion
+# Word -> Fashion -> Word
+one_layer_word_fashion
+# Word -> Fashion -> Word (Use embedding)
+one_layer_word_fashion_embedding
+# Word -> Word -> Word (Use embedding)
+one_layer_word_word_embedding
+# Sentence -> Fashion -> Sentence
+one_layer_sentence_fashion
+# Sentence -> Fashion -> Sentence (Use word-to-word embedding)
+one_layer_sentence_fashion_embedding
 
 # Two layer
 # Face -> Fashion -> MNIST -> Fashion -> Face (RGB)

@@ -6,7 +6,7 @@ from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 
-from generator_models import ImageGeneratorModelCreator
+from generator_models import GeneratorModelCreator
 from discriminator_models import DiscriminatorModelCreator
 from gan_models import EncoderGanModelCreator, DecoderGanModelCreator
 
@@ -115,8 +115,11 @@ except ImportError:
 """ Encoder - Outer layer """
 
 # Create encoder generator
-outer_encoder_generator_creator = ImageGeneratorModelCreator(constants.RGB_INPUT_SHAPE,
-                                                             constants.OUTPUT_SHAPE)
+outer_encoder_generator_creator = GeneratorModelCreator(constants.RGB_INPUT_SHAPE,
+                                                        constants.OUTPUT_SHAPE,
+                                                        from_image=True,
+                                                        to_image=True,
+                                                        activation='tanh')
 outer_encoder_generator = outer_encoder_generator_creator.create_model()
 
 # Create encoder discriminator
@@ -132,8 +135,11 @@ outer_encoder_gan = outer_encoder_gan_creator.create_model()
 """ Encoder - Middle layer """
 
 # Create encoder generator
-mid_encoder_generator_creator = ImageGeneratorModelCreator(constants.INPUT_SHAPE,
-                                                           constants.OUTPUT_SHAPE)
+mid_encoder_generator_creator = GeneratorModelCreator(constants.INPUT_SHAPE,
+                                                      constants.OUTPUT_SHAPE,
+                                                      from_image=True,
+                                                      to_image=True,
+                                                      activation='tanh')
 mid_encoder_generator = mid_encoder_generator_creator.create_model()
 
 # Create encoder discriminator
@@ -149,8 +155,11 @@ mid_encoder_gan = mid_encoder_gan_creator.create_model()
 """ Encoder - Inner layer """
 
 # Create encoder generator
-inner_encoder_generator_creator = ImageGeneratorModelCreator(constants.INPUT_SHAPE,
-                                                             constants.OUTPUT_SHAPE)
+inner_encoder_generator_creator = GeneratorModelCreator(constants.INPUT_SHAPE,
+                                                        constants.OUTPUT_SHAPE,
+                                                        from_image=True,
+                                                        to_image=True,
+                                                        activation='tanh')
 inner_encoder_generator = inner_encoder_generator_creator.create_model()
 
 # Create encoder discriminator
@@ -166,8 +175,11 @@ inner_encoder_gan = inner_encoder_gan_creator.create_model()
 """ Decoder - Inner layer """
 
 # Create decoder generator
-inner_decoder_generator_creator = ImageGeneratorModelCreator(constants.INPUT_SHAPE,
-                                                             constants.OUTPUT_SHAPE)
+inner_decoder_generator_creator = GeneratorModelCreator(constants.INPUT_SHAPE,
+                                                        constants.OUTPUT_SHAPE,
+                                                        from_image=True,
+                                                        to_image=True,
+                                                        activation='tanh')
 inner_decoder_generator = inner_decoder_generator_creator.create_model()
 
 # Create GAN model to combine encoder generator and decoder generator
@@ -178,8 +190,11 @@ inner_decoder_gan = inner_decoder_gan_creator.create_model()
 """ Decoder - Middle layer """
 
 # Create decoder generator
-mid_decoder_generator_creator = ImageGeneratorModelCreator(constants.INPUT_SHAPE,
-                                                           constants.OUTPUT_SHAPE)
+mid_decoder_generator_creator = GeneratorModelCreator(constants.INPUT_SHAPE,
+                                                      constants.OUTPUT_SHAPE,
+                                                      from_image=True,
+                                                      to_image=True,
+                                                      activation='tanh')
 mid_decoder_generator = mid_decoder_generator_creator.create_model()
 
 # Create GAN model to combine encoder generator and decoder generator
@@ -190,8 +205,11 @@ mid_decoder_gan = mid_decoder_gan_creator.create_model()
 """ Decoder - Outer layer """
 
 # Create decoder generator
-outer_decoder_generator_creator = ImageGeneratorModelCreator(constants.INPUT_SHAPE,
-                                                             constants.RGB_OUTPUT_SHAPE)
+outer_decoder_generator_creator = GeneratorModelCreator(constants.INPUT_SHAPE,
+                                                        constants.RGB_OUTPUT_SHAPE,
+                                                        from_image=True,
+                                                        to_image=True,
+                                                        activation='tanh')
 outer_decoder_generator = outer_decoder_generator_creator.create_model()
 
 # Create GAN model to combine encoder generator and decoder generator

@@ -4,7 +4,7 @@ from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 
-from generator_models import ImageGeneratorModelCreator
+from generator_models import GeneratorModelCreator
 from discriminator_models import DiscriminatorModelCreator
 from gan_models import EncoderGanModelCreator, DecoderGanModelCreator
 
@@ -100,8 +100,11 @@ except ImportError:
 # Encoder
 
 # Create encoder generator
-encoder_generator_creator = ImageGeneratorModelCreator(constants.RGB_INPUT_SHAPE,
-                                                       constants.RGB_OUTPUT_SHAPE)
+encoder_generator_creator = GeneratorModelCreator(constants.RGB_INPUT_SHAPE,
+                                                  constants.RGB_OUTPUT_SHAPE,
+                                                  from_image=True,
+                                                  to_image=True,
+                                                  activation='tanh')
 encoder_generator = encoder_generator_creator.create_model()
 
 # Create encoder discriminator
@@ -117,8 +120,11 @@ encoder_gan = encoder_gan_creator.create_model()
 # Decoder
 
 # Create decoder generator
-decoder_generator_creator = ImageGeneratorModelCreator(constants.RGB_INPUT_SHAPE,
-                                                       constants.RGB_OUTPUT_SHAPE)
+decoder_generator_creator = GeneratorModelCreator(constants.RGB_INPUT_SHAPE,
+                                                  constants.RGB_OUTPUT_SHAPE,
+                                                  from_image=True,
+                                                  to_image=True,
+                                                  activation='tanh')
 decoder_generator = decoder_generator_creator.create_model()
 
 # Create GAN model to combine encoder generator and decoder generator

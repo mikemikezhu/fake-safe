@@ -31,13 +31,23 @@ class SampleImageDisplayer(AbstractSampleDisplayer):
         count = 0
         for i in range(self.row):
             for j in range(self.column):
-                axs[i, j].imshow(samples[count], cmap=self.cmap)
-                axs[i, j].axis('off')
-                if labels is not None:
-                    axs[i, j].text(0.5, -0.15, labels[count],
-                                   size=6, ha='center',
-                                   transform=axs[i, j].transAxes)
-                count += 1
+                if count < len(samples):
+                    if self.row == 1:
+                        axs[j].imshow(samples[count], cmap=self.cmap)
+                        axs[j].axis('off')
+                        if labels is not None:
+                            axs[j].text(0.5, -0.15, labels[count],
+                                        size=6, ha='center',
+                                        transform=axs[j].transAxes)
+
+                    else:
+                        axs[i, j].imshow(samples[count], cmap=self.cmap)
+                        axs[i, j].axis('off')
+                        if labels is not None:
+                            axs[i, j].text(0.5, -0.15, labels[count],
+                                           size=6, ha='center',
+                                           transform=axs[i, j].transAxes)
+                    count += 1
 
         if should_display_directly:
             plt.show()
