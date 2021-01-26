@@ -105,7 +105,7 @@ except ImportError:
 # Encoder
 
 # Create encoder generator
-encoder_generator_creator = GeneratorModelCreator(constants.RGB_INPUT_SHAPE,
+encoder_generator_creator = GeneratorModelCreator(constants.DEFAULT_RGB_INPUT_SHAPE,
                                                   constants.OUTPUT_SHAPE,
                                                   from_image=True,
                                                   to_image=True,
@@ -126,7 +126,7 @@ encoder_gan = encoder_gan_creator.create_model()
 
 # Create decoder generator
 decoder_generator_creator = GeneratorModelCreator(constants.INPUT_SHAPE,
-                                                  constants.RGB_OUTPUT_SHAPE,
+                                                  constants.DEFAULT_RGB_OUTPUT_SHAPE,
                                                   from_image=True,
                                                   to_image=True,
                                                   activation='tanh')

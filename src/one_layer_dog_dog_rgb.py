@@ -106,8 +106,8 @@ Create models
 # Encoder
 
 # Create encoder generator
-encoder_generator_creator = GeneratorModelCreator(constants.IMAGE_NET_INPUT_SHAPE,
-                                                  constants.IMAGE_NET_OUTPUT_SHAPE,
+encoder_generator_creator = GeneratorModelCreator(constants.IMAGE_NET_RGB_INPUT_SHAPE,
+                                                  constants.IMAGE_NET_RGB_OUTPUT_SHAPE,
                                                   from_image=True,
                                                   to_image=True,
                                                   activation='tanh')
@@ -115,7 +115,7 @@ encoder_generator = encoder_generator_creator.create_model()
 
 # Create encoder discriminator
 encoder_discriminator_creator = DiscriminatorModelCreator(
-    constants.IMAGE_NET_INPUT_SHAPE)
+    constants.IMAGE_NET_RGB_INPUT_SHAPE)
 encoder_discriminator = encoder_discriminator_creator.create_model()
 
 # Create GAN model to combine encoder generator and discriminator
@@ -126,8 +126,8 @@ encoder_gan = encoder_gan_creator.create_model()
 # Decoder
 
 # Create decoder generator
-decoder_generator_creator = GeneratorModelCreator(constants.IMAGE_NET_INPUT_SHAPE,
-                                                  constants.IMAGE_NET_OUTPUT_SHAPE,
+decoder_generator_creator = GeneratorModelCreator(constants.IMAGE_NET_RGB_INPUT_SHAPE,
+                                                  constants.IMAGE_NET_RGB_OUTPUT_SHAPE,
                                                   from_image=True,
                                                   to_image=True,
                                                   activation='tanh')

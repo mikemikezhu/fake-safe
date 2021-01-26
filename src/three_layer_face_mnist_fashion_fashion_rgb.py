@@ -115,7 +115,7 @@ except ImportError:
 """ Encoder - Outer layer """
 
 # Create encoder generator
-outer_encoder_generator_creator = GeneratorModelCreator(constants.RGB_INPUT_SHAPE,
+outer_encoder_generator_creator = GeneratorModelCreator(constants.DEFAULT_RGB_INPUT_SHAPE,
                                                         constants.OUTPUT_SHAPE,
                                                         from_image=True,
                                                         to_image=True,
@@ -206,7 +206,7 @@ mid_decoder_gan = mid_decoder_gan_creator.create_model()
 
 # Create decoder generator
 outer_decoder_generator_creator = GeneratorModelCreator(constants.INPUT_SHAPE,
-                                                        constants.RGB_OUTPUT_SHAPE,
+                                                        constants.DEFAULT_RGB_OUTPUT_SHAPE,
                                                         from_image=True,
                                                         to_image=True,
                                                         activation='tanh')

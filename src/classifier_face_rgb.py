@@ -72,7 +72,7 @@ print('y_train: {}'.format(y_train.shape))
 print('y_test: {}'.format(y_test.shape))
 
 # Create classifier
-classifier_creator = ClassifierModelCreator(constants.RGB_INPUT_SHAPE,
+classifier_creator = ClassifierModelCreator(constants.DEFAULT_RGB_INPUT_SHAPE,
                                             10,
                                             model_name)
 classifier = classifier_creator.create_model()
