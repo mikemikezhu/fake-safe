@@ -4,7 +4,7 @@ from classifier_models import ClassifierModelCreator
 from trainers import ClassifierTrainer
 from displayers import SampleDiagramDisplayer
 
-import constants
+import fakesafe_constants as constants
 import os
 import sys
 import re

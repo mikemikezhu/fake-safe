@@ -17,7 +17,7 @@ from numpy import ones
 from numpy import zeros
 import numpy as np
 import re
-import constants
+import fakesafe_constants as constants
 
 import string
 from unicodedata import normalize

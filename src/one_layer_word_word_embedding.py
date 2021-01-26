@@ -23,7 +23,7 @@ import string
 from unicodedata import normalize
 import re
 import os
-import constants
+import fakesafe_constants as constants
 
 import sys
 

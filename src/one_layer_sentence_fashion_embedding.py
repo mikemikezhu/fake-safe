@@ -22,7 +22,7 @@ from numpy import zeros
 import numpy as np
 import re
 import os
-import constants
+import fakesafe_constants as constants
 
 import string
 from unicodedata import normalize
