@@ -1,9 +1,6 @@
 from tensorflow.keras.models import load_model
 
-from sklearn.metrics import classification_report
-from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
-
 from skimage.metrics import structural_similarity
 from skimage.metrics import peak_signal_noise_ratio
 
