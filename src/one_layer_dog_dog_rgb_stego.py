@@ -12,7 +12,7 @@ from discriminator_models import DiscriminatorModelCreator
 from gan_models import EncoderGanModelCreator, DecoderGanModelCreator
 
 from trainers import EncoderTrainer, DecoderTrainer
-from displayers import SampleImageDisplayer, SampleDiagramDisplayer, SampleConfusionMatrixDisplayer, SampleReportDisplayer
+from displayers import SampleImageDisplayer, SampleDiagramDisplayer, SampleReportDisplayer
 
 from numpy import ones
 from numpy import zeros
@@ -139,8 +139,6 @@ image_displayer_rgb = SampleImageDisplayer(row=constants.IMAGE_NET_DISPLAY_ROW,
                                            column=constants.IMAGE_NET_DISPLAY_COLUMN)
 
 diagram_displayer = SampleDiagramDisplayer()
-
-confusion_displayer = SampleConfusionMatrixDisplayer()
 report_displayer = SampleReportDisplayer()
 
 encoder_discriminator_loss = []
