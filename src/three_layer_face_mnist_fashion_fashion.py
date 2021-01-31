@@ -5,6 +5,8 @@ from tensorflow.keras.models import load_model
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
+from skimage.metrics import structural_similarity
+from skimage.metrics import peak_signal_noise_ratio
 
 from generator_models import GeneratorModelCreator
 from discriminator_models import DiscriminatorModelCreator
@@ -548,6 +550,28 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
     print('Decoded classification loss: {}, accuracy: {}'.format(
         loss_class, acc_class))
 
+    # Compare PSNR and SSIM
+    total_sample_images = constants.DISPLAY_ROW * constants.DISPLAY_COLUMN
+    total_ssim = 0
+    total_psnr = 0
+
+    for index in range(total_sample_images):
+
+        sample_image = original_images[index]
+        decoded_sample_image = outer_decoded_images[index]
+
+        ssim = structural_similarity(sample_image, decoded_sample_image)
+        psnr = peak_signal_noise_ratio(sample_image, decoded_sample_image)
+
+        total_ssim += ssim
+        total_psnr += psnr
+
+    avg_ssim = total_ssim / total_sample_images
+    avg_psnr = total_psnr / total_sample_images
+
+    print('SSIM: {}'.format(avg_ssim))
+    print('PSNR: {}'.format(avg_psnr))
+
     # Calculate recall and precision and f1 score
     confusion = confusion_matrix(original_labels,
                                  decoded_labels)
@@ -573,7 +597,7 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
         'encoder_discriminator_accuracy_mid': d_acc_mid,
         'encoder_generator_loss_mid': g_loss_mid,
         'encoder_generator_accuracy_mid': g_acc_mid,
-        
+
         'encoder_discriminator_loss_inner': d_loss_inner,
         'encoder_discriminator_accuracy_inner': d_acc_inner,
         'encoder_generator_loss_inner': g_loss_inner,
@@ -589,7 +613,10 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
         'decoder_accuracy_outer': accuracy_outer,
 
         'loss_class': loss_class,
-        'acc_class': acc_class
+        'acc_class': acc_class,
+
+        'ssim': avg_ssim,
+        'psnr': avg_psnr
     }
 
     report_name = 'Report - {}'.format(current_round + 1)
@@ -698,10 +725,16 @@ diagram_displayer.display_samples(name='Class Accuracy',
                                   should_display_directly=should_display_directly,
                                   should_save_to_file=should_save_to_file)
 
-outer_encoder_generator.save('model/three_layer_face_mnist_fashion_fashion_outer_encoder_generator.h5')
-mid_encoder_generator.save('model/three_layer_face_mnist_fashion_fashion_mid_encoder_generator.h5')
-inner_encoder_generator.save('model/three_layer_face_mnist_fashion_fashion_inner_encoder_generator.h5')
+outer_encoder_generator.save(
+    'model/three_layer_face_mnist_fashion_fashion_outer_encoder_generator.h5')
+mid_encoder_generator.save(
+    'model/three_layer_face_mnist_fashion_fashion_mid_encoder_generator.h5')
+inner_encoder_generator.save(
+    'model/three_layer_face_mnist_fashion_fashion_inner_encoder_generator.h5')
 
-outer_decoder_generator.save('model/three_layer_face_mnist_fashion_fashion_outer_decoder_generator.h5')
-mid_decoder_generator.save('model/three_layer_face_mnist_fashion_fashion_mid_decoder_generator.h5')
-inner_decoder_generator.save('model/three_layer_face_mnist_fashion_fashion_inner_decoder_generator.h5')
+outer_decoder_generator.save(
+    'model/three_layer_face_mnist_fashion_fashion_outer_decoder_generator.h5')
+mid_decoder_generator.save(
+    'model/three_layer_face_mnist_fashion_fashion_mid_decoder_generator.h5')
+inner_decoder_generator.save(
+    'model/three_layer_face_mnist_fashion_fashion_inner_decoder_generator.h5')
