@@ -61,7 +61,8 @@ dog_images = np.asarray(dog_images)
 
 print('dog images shape: {}'.format(dog_images.shape))
 
-dog_images_train, dog_images_test = train_test_split(dog_images, test_size=0.15)
+dog_images_train, dog_images_test = train_test_split(
+    dog_images, test_size=0.15)
 
 # Rescale -1 to 1
 dog_images_train_scaled = (dog_images_train / 255.0) * 2 - 1
@@ -70,6 +71,13 @@ dog_images_test_scaled = (dog_images_test / 255.0) * 2 - 1
 """
 Create models
 """
+
+# Classifier
+try:
+    classifier = load_model('model/classifier_dog_rgb_stego.h5')
+except ImportError:
+    print('Unable to load classifier. Please run classifier script first')
+    sys.exit()
 
 # Encoder
 
@@ -150,8 +158,10 @@ decoder_accuracy = []
 class_loss = []
 class_accuracy = []
 
-y_zeros = zeros((constants.IMAGE_NET_DISPLAY_ROW * constants.IMAGE_NET_DISPLAY_COLUMN, 1))
-y_ones = ones((constants.IMAGE_NET_DISPLAY_ROW * constants.IMAGE_NET_DISPLAY_COLUMN, 1))
+y_zeros = zeros((constants.IMAGE_NET_DISPLAY_ROW *
+                 constants.IMAGE_NET_DISPLAY_COLUMN, 1))
+y_ones = ones((constants.IMAGE_NET_DISPLAY_ROW *
+               constants.IMAGE_NET_DISPLAY_COLUMN, 1))
 
 for current_round in range(constants.TOTAL_TRAINING_ROUND):
 
@@ -228,26 +238,34 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
     decoder_accuracy.append(accuracy)
 
     # Compare PSNR and SSIM
-    total_sample_images = constants.IMAGE_NET_DISPLAY_ROW * constants.IMAGE_NET_DISPLAY_COLUMN
+    total_sample_images = constants.IMAGE_NET_DISPLAY_ROW * \
+        constants.IMAGE_NET_DISPLAY_COLUMN
     total_ssim = 0
     total_psnr = 0
-    
+
     for index in range(total_sample_images):
-        
+
         sample_image = sample_images[index]
         decoded_sample_image = decoded_sample_images[index]
-        
-        ssim = structural_similarity(sample_image, decoded_sample_image, multichannel=True)
+
+        ssim = structural_similarity(
+            sample_image, decoded_sample_image, multichannel=True)
         psnr = peak_signal_noise_ratio(sample_image, decoded_sample_image)
-        
+
         total_ssim += ssim
         total_psnr += psnr
-    
+
     avg_ssim = total_ssim / total_sample_images
     avg_psnr = total_psnr / total_sample_images
 
     print('SSIM: {}'.format(avg_ssim))
     print('PSNR: {}'.format(avg_psnr))
+
+    # Encoded image class
+    encoded_sample_labels = np.ones(
+        (constants.IMAGE_NET_DISPLAY_ROW * constants.IMAGE_NET_DISPLAY_COLUMN,))
+    loss_class_encoded, acc_class_encoded = classifier.evaluate(encoded_sample_images,
+                                                                encoded_sample_labels)
 
     report = {
         'encoder_discriminator_loss': d_loss,
@@ -256,6 +274,8 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
         'encoder_generator_accuracy': g_acc,
         'decoder_loss': loss,
         'decoder_accuracy': accuracy,
+        'loss_class_encoded': loss_class_encoded,
+        'acc_class_encoded': acc_class_encoded,
         'ssim': avg_ssim,
         'psnr': avg_psnr
     }
