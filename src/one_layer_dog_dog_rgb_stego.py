@@ -1,7 +1,5 @@
 from tensorflow.keras.models import load_model
 
-from sklearn.metrics import classification_report
-from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 from skimage.metrics import structural_similarity
 from skimage.metrics import peak_signal_noise_ratio
@@ -11,7 +9,7 @@ from discriminator_models import DiscriminatorModelCreator
 from gan_models import EncoderGanModelCreator, DecoderGanModelCreator
 
 from trainers import EncoderTrainer, DecoderTrainer
-from displayers import SampleImageDisplayer, SampleDiagramDisplayer, SampleConfusionMatrixDisplayer, SampleReportDisplayer
+from displayers import SampleImageDisplayer, SampleDiagramDisplayer, SampleReportDisplayer
 
 from numpy import ones
 from numpy import zeros
@@ -25,7 +23,7 @@ from PIL import Image
 
 """
 One layer encoding-decoding:
-Face -> (Encode) -> Face -> (Decode) -> Face
+Dog -> (Encode) -> Dog -> (Decode) -> Dog
 """
 
 """
@@ -49,44 +47,26 @@ print('Should save to file: {}'.format(should_save_to_file))
 Load data
 """
 
-face_images = []
-face_labels = []
+dog_images = []
 
-for face_file in os.scandir(constants.FACE_IMAGE_DATASET_PATH):
+for dog_file in os.scandir(constants.DOG_IMAGE_DATASET_PATH):
+    dog_file_name = dog_file.name
+    if dog_file_name.endswith('.jpg'):
+        dog_file_path = constants.DOG_IMAGE_DATASET_PATH + '/' + dog_file_name
+        dog_image = Image.open(dog_file_path)
+        image_array = np.asarray(dog_image)
+        dog_images.append(image_array)
 
-    face_file_name = face_file.name
-    face_label = re.findall('\d+', face_file_name)[0]
-    face_labels.append(face_label)
+dog_images = np.asarray(dog_images)
 
-    face_file_path = constants.FACE_IMAGE_DATASET_PATH + '/' + face_file_name
-    face_image = Image.open(face_file_path)
-    resized_image = face_image.resize((28, 28))
-    image_array = np.asarray(resized_image)
-    face_images.append(image_array)
+print('dog images shape: {}'.format(dog_images.shape))
 
-face_images = np.asarray(face_images)
-face_labels = np.asarray(face_labels)
+dog_images_train, dog_images_test = train_test_split(
+    dog_images, test_size=0.15)
 
-unique_labels = np.unique(face_labels)
-labels_to_index = {}
-for index in range(unique_labels.shape[0]):
-    label = unique_labels[index]
-    labels_to_index[label] = index
-print(labels_to_index)
-
-face_labels = [labels_to_index[label] for label in face_labels]
-face_labels = np.asarray(face_labels)
-
-print('Face images shape: {}'.format(face_images.shape))
-print('Face labels shape: {}'.format(face_labels.shape))
-
-# Load data
-face_images_train, face_images_test, face_labels_train, face_labels_test = train_test_split(face_images,
-                                                                                            face_labels,
-                                                                                            test_size=0.15)
 # Rescale -1 to 1
-face_images_train_scaled = (face_images_train / 255.0) * 2 - 1
-face_images_test_scaled = (face_images_test / 255.0) * 2 - 1
+dog_images_train_scaled = (dog_images_train / 255.0) * 2 - 1
+dog_images_test_scaled = (dog_images_test / 255.0) * 2 - 1
 
 """
 Create models
@@ -94,7 +74,7 @@ Create models
 
 # Classifier
 try:
-    classifier = load_model('model/classifier_face_rgb.h5')
+    classifier = load_model('model/classifier_dog_rgb_stego.h5')
 except ImportError:
     print('Unable to load classifier. Please run classifier script first')
     sys.exit()
@@ -102,8 +82,8 @@ except ImportError:
 # Encoder
 
 # Create encoder generator
-encoder_generator_creator = GeneratorModelCreator(constants.DEFAULT_RGB_INPUT_SHAPE,
-                                                  constants.DEFAULT_RGB_OUTPUT_SHAPE,
+encoder_generator_creator = GeneratorModelCreator(constants.IMAGE_NET_RGB_INPUT_SHAPE,
+                                                  constants.IMAGE_NET_RGB_OUTPUT_SHAPE,
                                                   from_image=True,
                                                   to_image=True,
                                                   activation='tanh')
@@ -111,7 +91,7 @@ encoder_generator = encoder_generator_creator.create_model()
 
 # Create encoder discriminator
 encoder_discriminator_creator = DiscriminatorModelCreator(
-    constants.DEFAULT_RGB_INPUT_SHAPE)
+    constants.IMAGE_NET_RGB_INPUT_SHAPE)
 encoder_discriminator = encoder_discriminator_creator.create_model()
 
 # Create GAN model to combine encoder generator and discriminator
@@ -122,8 +102,8 @@ encoder_gan = encoder_gan_creator.create_model()
 # Decoder
 
 # Create decoder generator
-decoder_generator_creator = GeneratorModelCreator(constants.DEFAULT_RGB_INPUT_SHAPE,
-                                                  constants.DEFAULT_RGB_OUTPUT_SHAPE,
+decoder_generator_creator = GeneratorModelCreator(constants.IMAGE_NET_RGB_INPUT_SHAPE,
+                                                  constants.IMAGE_NET_RGB_OUTPUT_SHAPE,
                                                   from_image=True,
                                                   to_image=True,
                                                   activation='tanh')
@@ -160,12 +140,10 @@ decoder_trainer = DecoderTrainer(encoder_generator,
 Start training
 """
 
-image_displayer_rgb = SampleImageDisplayer(row=constants.DISPLAY_ROW,
-                                           column=constants.DISPLAY_COLUMN)
+image_displayer_rgb = SampleImageDisplayer(row=constants.IMAGE_NET_DISPLAY_ROW,
+                                           column=constants.IMAGE_NET_DISPLAY_COLUMN)
 
 diagram_displayer = SampleDiagramDisplayer()
-
-confusion_displayer = SampleConfusionMatrixDisplayer()
 report_displayer = SampleReportDisplayer()
 
 encoder_discriminator_loss = []
@@ -180,8 +158,10 @@ decoder_accuracy = []
 class_loss = []
 class_accuracy = []
 
-y_zeros = zeros((constants.DISPLAY_ROW * constants.DISPLAY_COLUMN, 1))
-y_ones = ones((constants.DISPLAY_ROW * constants.DISPLAY_COLUMN, 1))
+y_zeros = zeros((constants.IMAGE_NET_DISPLAY_ROW *
+                 constants.IMAGE_NET_DISPLAY_COLUMN, 1))
+y_ones = ones((constants.IMAGE_NET_DISPLAY_ROW *
+               constants.IMAGE_NET_DISPLAY_COLUMN, 1))
 
 for current_round in range(constants.TOTAL_TRAINING_ROUND):
 
@@ -190,31 +170,23 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
     print('************************')
 
     # Train encoder
-    encoder_trainer.train(input_data=face_images_train_scaled,
-                          exp_output_data=face_images_train_scaled)
+    encoder_trainer.train(input_data=dog_images_train_scaled,
+                          exp_output_data=dog_images_train_scaled)
     # Train decoder
-    decoder_trainer.train(input_data=face_images_train_scaled)
+    decoder_trainer.train(input_data=dog_images_train_scaled)
 
     # Select sample of images
     sample_indexes = np.random.randint(0,
-                                       face_images_test.shape[0],
-                                       constants.DISPLAY_ROW * constants.DISPLAY_COLUMN)
-    sample_images = face_images_test[sample_indexes]
-    sample_labels = face_labels_test[sample_indexes]
+                                       dog_images_test.shape[0],
+                                       constants.IMAGE_NET_DISPLAY_ROW * constants.IMAGE_NET_DISPLAY_COLUMN)
+    sample_images = dog_images_test[sample_indexes]
 
     # Display original images
     original_name = 'Original - {}'.format(current_round + 1)
     image_displayer_rgb.display_samples(name=original_name,
                                         samples=sample_images,
                                         should_display_directly=should_display_directly,
-                                        should_save_to_file=should_save_to_file,
-                                        labels=sample_labels)
-
-    # Evaluate images with labels
-    loss_class_original, acc_class_original = classifier.evaluate(sample_images,
-                                                                  sample_labels)
-    print('Original classification loss: {}, accuracy: {}'.format(
-        loss_class_original, acc_class_original))
+                                        should_save_to_file=should_save_to_file)
 
     # Encode images
     sample_images_scaled = (sample_images / 255.0) * 2 - 1
@@ -238,17 +210,10 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
     decoded_sample_images = (decoded_sample_images_scaled + 1) / 2 * 255
     decoded_sample_images = decoded_sample_images.astype(int)
 
-    labels_probs = classifier.predict(decoded_sample_images)
-    decoded_sample_labels = []
-    for probs in labels_probs:
-        label = np.argmax(probs)
-        decoded_sample_labels.append(label)
-
     image_displayer_rgb.display_samples(name=decoded_name,
                                         samples=decoded_sample_images,
                                         should_display_directly=should_display_directly,
-                                        should_save_to_file=should_save_to_file,
-                                        labels=decoded_sample_labels)
+                                        should_save_to_file=should_save_to_file)
 
     # Evaluate
     loss_fake, acc_fake = encoder_discriminator.evaluate(encoded_sample_images_scaled,
@@ -273,7 +238,8 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
     decoder_accuracy.append(accuracy)
 
     # Compare PSNR and SSIM
-    total_sample_images = constants.DISPLAY_ROW * constants.DISPLAY_COLUMN
+    total_sample_images = constants.IMAGE_NET_DISPLAY_ROW * \
+        constants.IMAGE_NET_DISPLAY_COLUMN
     total_ssim = 0
     total_psnr = 0
 
@@ -295,37 +261,21 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
     print('SSIM: {}'.format(avg_ssim))
     print('PSNR: {}'.format(avg_psnr))
 
-    # Evaluate images with labels
-    loss_class, acc_class = classifier.evaluate(decoded_sample_images,
-                                                sample_labels)
-    class_loss.append(loss_class)
-    class_accuracy.append(acc_class)
-    print('Decoded classification loss: {}, accuracy: {}'.format(
-        loss_class, acc_class))
+    # Encoded image class
+    encoded_sample_labels = np.ones(
+        (constants.IMAGE_NET_DISPLAY_ROW * constants.IMAGE_NET_DISPLAY_COLUMN,))
+    loss_class_encoded, acc_class_encoded = classifier.evaluate(encoded_sample_images,
+                                                                encoded_sample_labels)
 
-    # Calculate recall and precision and f1 score
-    confusion = confusion_matrix(sample_labels,
-                                 decoded_sample_labels)
-    confusion_name = 'Confusion Matrix - {}'.format(current_round + 1)
-    confusion_displayer.display_samples(name=confusion_name,
-                                        samples=confusion,
-                                        should_display_directly=should_display_directly,
-                                        should_save_to_file=should_save_to_file)
-
-    classification = classification_report(sample_labels,
-                                           decoded_sample_labels)
     report = {
-        'classification': classification,
-        'loss_class_original': loss_class_original,
-        'acc_class_original': acc_class_original,
         'encoder_discriminator_loss': d_loss,
         'encoder_discriminator_accuracy': d_acc,
         'encoder_generator_loss': g_loss,
         'encoder_generator_accuracy': g_acc,
         'decoder_loss': loss,
         'decoder_accuracy': accuracy,
-        'loss_class': loss_class,
-        'acc_class': acc_class,
+        'loss_class_encoded': loss_class_encoded,
+        'acc_class_encoded': acc_class_encoded,
         'ssim': avg_ssim,
         'psnr': avg_psnr
     }
@@ -335,7 +285,6 @@ for current_round in range(constants.TOTAL_TRAINING_ROUND):
                                      samples=report,
                                      should_display_directly=should_display_directly,
                                      should_save_to_file=should_save_to_file)
-
 
 diagram_displayer.display_samples(name='Encoder Discriminator Loss',
                                   samples=encoder_discriminator_loss,
@@ -377,5 +326,5 @@ diagram_displayer.display_samples(name='Class Accuracy',
                                   should_display_directly=should_display_directly,
                                   should_save_to_file=should_save_to_file)
 
-encoder_generator.save('model/one_layer_face_face_rgb_encoder_generator.h5')
-decoder_generator.save('model/one_layer_face_face_rgb_decoder_generator.h5')
+encoder_generator.save('model/one_layer_dog_dog_rgb_encoder_generator.h5')
+decoder_generator.save('model/one_layer_dog_dog_rgb_decoder_generator.h5')
